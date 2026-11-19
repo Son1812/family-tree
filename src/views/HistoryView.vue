@@ -1,0 +1,110 @@
+<template>
+  <div class="max-w-4xl mx-auto space-y-8 py-2">
+    <!-- Header Sử Ký -->
+    <div class="text-center space-y-2">
+      <span class="text-xs font-bold uppercase tracking-widest text-amber-800 bg-amber-100 px-3 py-1 rounded-full">
+        Văn Hiến Dòng Tộc
+      </span>
+      <h1 class="text-3xl font-bold font-serif text-slate-800">
+        Phả Ký & Tộc Ước Đại Tộc Nguyễn Phúc
+      </h1>
+      <p class="text-xs text-slate-500 max-w-xl mx-auto">
+        "Cây có gốc mới nở cành xanh ngọn, nước có nguồn mới biển rộng sông sâu. Con người có tổ tiên mới nên thân nên hình."
+      </p>
+    </div>
+
+    <!-- Cội nguồn lịch sử -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm space-y-4">
+      <h2 class="text-xl font-bold font-serif text-amber-900 flex items-center gap-2 border-b border-amber-100 pb-3">
+        <span>🏛️</span> Nguồn Gốc & Sự Nghiệp Khởi Tổ
+      </h2>
+      <div class="prose prose-slate text-sm leading-relaxed space-y-3 font-serif">
+        <p>
+          Dòng họ Nguyễn Phúc nguyên quán tại vùng đất văn hiến Nam Trực, tỉnh Nam Định. Cụ Khởi Tổ là Nguyễn Phúc Khởi (1890 - 1968), Tự Minh Đức, thụy Thuần Khiết. Cụ đỗ Tú tài khoa Tân Hợi dưới triều Duy Tân, là bậc túc nho tài đức vẹn toàn.
+        </p>
+        <p>
+          Thời niên thiếu cụ nổi danh cần mẫn, hay chữ, sau theo nghiệp bốc thuốc cứu đời và dạy chữ Nho cho con em quanh vùng. Cụ cùng cụ bà Lê Thị Từ Tâm sinh hạ được bốn người con: Chi Trưởng là cụ Nguyễn Phúc Trực, Chi Hai là cụ Nguyễn Phúc Quang, Chi Ba là cụ Nguyễn Phúc Hùng (Liệt sĩ chống Mỹ), và cô gái lớn Nguyễn Thị Hòa.
+        </p>
+        <p>
+          Từ thuở khai cơ đến nay, dòng họ đã phát triển qua 5 thế hệ, con cháu kế thừa gia phong, đỗ đạt cử nhân, thạc sĩ, tiến sĩ, nhiều người là kỹ sư, bác sĩ, sĩ quan quân đội, doanh nhân, góp phần xây dựng đất nước và rạng danh tiên tổ.
+        </p>
+      </div>
+    </div>
+
+    <!-- Tộc ước 10 điều -->
+    <div class="bg-amber-50/60 rounded-2xl border border-amber-200 p-6 md:p-8 shadow-sm space-y-6">
+      <h2 class="text-xl font-bold font-serif text-amber-900 flex items-center gap-2 border-b border-amber-200 pb-3">
+        <span>📜</span> Thập Giới Tộc Ước (10 Điều Quy Ước Gia Phong)
+      </h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs leading-normal">
+        <div class="p-3.5 bg-white rounded-xl border border-amber-100 space-y-1">
+          <div class="font-bold text-amber-900 text-sm">Điều 1: Kính Tiên Tổ</div>
+          <p class="text-slate-600">Nhớ ngày giỗ tết, phụng thờ tiên tổ chu đáo, gìn giữ từ đường trang nghiêm sạch đẹp.</p>
+        </div>
+        <div class="p-3.5 bg-white rounded-xl border border-amber-100 space-y-1">
+          <div class="font-bold text-amber-900 text-sm">Điều 2: Hiếu Phụ Mẫu</div>
+          <p class="text-slate-600">Tròn đạo làm con, hiếu kính phụ dưỡng cha mẹ ông bà lúc tuổi già sức yếu.</p>
+        </div>
+        <div class="p-3.5 bg-white rounded-xl border border-amber-100 space-y-1">
+          <div class="font-bold text-amber-900 text-sm">Điều 3: Hòa Huynh Đệ</div>
+          <p class="text-slate-600">Anh em một nhà phải thương yêu đùm bọc, nhường nhịn chở che, chia ngọt sẻ bùi.</p>
+        </div>
+        <div class="p-3.5 bg-white rounded-xl border border-amber-100 space-y-1">
+          <div class="font-bold text-amber-900 text-sm">Điều 4: Nghiêm Giáo Tử</div>
+          <p class="text-slate-600">Chăm lo dạy dỗ con cháu từ thuở ấu thơ, lấy đức làm gốc, lấy học làm đầu.</p>
+        </div>
+        <div class="p-3.5 bg-white rounded-xl border border-amber-100 space-y-1">
+          <div class="font-bold text-amber-900 text-sm">Điều 5: Tôn Tộc Trưởng</div>
+          <p class="text-slate-600">Kính trọng các bậc cao niên, trưởng tộc, giữ gìn tôn ty trật tự trong ngoài gia tộc.</p>
+        </div>
+        <div class="p-3.5 bg-white rounded-xl border border-amber-100 space-y-1">
+          <div class="font-bold text-amber-900 text-sm">Điều 6: Trọng Học Vấn</div>
+          <p class="text-slate-600">Khuyến khích con cháu gắng công học tập, lập thân lập nghiệp, không ngừng vươn lên.</p>
+        </div>
+        <div class="p-3.5 bg-white rounded-xl border border-amber-100 space-y-1">
+          <div class="font-bold text-amber-900 text-sm">Điều 7: Giữ Gia Phong</div>
+          <p class="text-slate-600">Sống trong sạch, cần kiệm liêm chính, tuyệt đối tránh xa tệ nạn xã hội.</p>
+        </div>
+        <div class="p-3.5 bg-white rounded-xl border border-amber-100 space-y-1">
+          <div class="font-bold text-amber-900 text-sm">Điều 8: Nghĩa Xóm Làng</div>
+          <p class="text-slate-600">Sống hòa thuận với xóm làng, tuân thủ pháp luật quốc gia, làm tròn nghĩa vụ công dân.</p>
+        </div>
+        <div class="p-3.5 bg-white rounded-xl border border-amber-100 space-y-1">
+          <div class="font-bold text-amber-900 text-sm">Điều 9: Trợ Bần Khó</div>
+          <p class="text-slate-600">Con cháu khá giả tương trợ người gặp hoạn nạn, đau ốm, giữ trọn tình máu mủ ruột rà.</p>
+        </div>
+        <div class="p-3.5 bg-white rounded-xl border border-amber-100 space-y-1">
+          <div class="font-bold text-amber-900 text-sm">Điều 10: Tục Biên Phả</div>
+          <p class="text-slate-600">Định kỳ cập nhật phả hệ khi có sinh, tử, giá, thú để lưu truyền đời đời không mai một.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thông tin Từ đường và Quỹ Khuyến học -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-3">
+        <h3 class="font-bold font-serif text-slate-800 text-base flex items-center gap-2">
+          <span>⛩️</span> Nhà Thờ Tổ & Lăng Mộ
+        </h3>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          <strong>Nhà thờ Tổ:</strong> Tọa lạc tại xã Nam Hùng, huyện Nam Trực, tỉnh Nam Định. Xây dựng năm 1935, trùng tu năm 2012 với kiến trúc 3 gian 2 chái bằng gỗ lim truyền thống.
+        </p>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          <strong>Khu Lăng mộ Tổ:</strong> Khu lăng mộ Cụ Thủy Tổ đặt tại đồi Thông, Nam Trực. Ngày tảo mộ hàng năm tổ chức vào ngày 25 tháng Chạp âm lịch.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-3">
+        <h3 class="font-bold font-serif text-slate-800 text-base flex items-center gap-2">
+          <span>🎓</span> Quỹ Khuyến Học - Khuyến Tài
+        </h3>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Thành lập năm 2005 do Trưởng tộc và Hội đồng gia tộc quản lý. Hàng năm trao phần thưởng cho các cháu đạt học sinh giỏi, đỗ đại học và đạt thành tích cao trong các kỳ thi quốc gia.
+        </p>
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/60 text-xs text-amber-900">
+          Lễ phát thưởng khuyến học được tổ chức vào ngày Giỗ Tổ (Rằm tháng 8 Âm lịch) hàng năm tại Nhà thờ họ.
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
