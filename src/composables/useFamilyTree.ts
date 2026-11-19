@@ -4,7 +4,7 @@ import { INITIAL_FAMILY_TREE } from '../data/mockFamily'
 import { buildAncestorChain } from '../components/chart/geometry'
 import { getTodayLunar } from '../utils/lunar'
 
-const STORAGE_KEY = 'family_tree_data_v1'
+const STORAGE_KEY = 'family_tree_data_v4'
 
 function loadFromStorage(): FamilyMember[] {
   try {
@@ -200,6 +200,25 @@ export function useFamilyTree() {
     target.spouses = target.spouses.filter((s) => s.id !== spouseId)
   }
 
+  // Nạp dữ liệu trực tiếp từ file public/data/family-tree.json
+  async function loadFromFamilyTreeFile(): Promise<boolean> {
+    try {
+      const res = await fetch(`/data/family-tree.json?t=${Date.now()}`)
+      if (res.ok) {
+        const parsed = await res.json()
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          tree.value = parsed
+          selectedMemberId.value = null
+          collapsedIds.value = new Set()
+          return true
+        }
+      }
+    } catch (e) {
+      console.warn('Chưa nạp được /data/family-tree.json:', e)
+    }
+    return false
+  }
+
   // Đặt lại dữ liệu ban đầu
   function resetToDefault() {
     tree.value = JSON.parse(JSON.stringify(INITIAL_FAMILY_TREE))
@@ -335,6 +354,7 @@ export function useFamilyTree() {
     addSpouse,
     removeSpouse,
     resetToDefault,
+    loadFromFamilyTreeFile,
     exportJSON,
     importJSON,
     deathAnniversaries,

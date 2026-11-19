@@ -5,49 +5,49 @@ export const GENERATION_STYLES: Record<number, GenerationStyle> = {
     generation: 1,
     roman: 'Đời I',
     title: 'Thủy Tổ Khởi Nghiệp',
-    color: '#b45309', // Amber Gold
-    bgColor: '#fef3c7',
-    borderColor: '#f59e0b',
+    color: '#d97706',
+    bgColor: 'rgba(217, 119, 6, 0.15)',
+    borderColor: '#d97706',
   },
   2: {
     generation: 2,
     roman: 'Đời II',
     title: 'Phân Chi Phát Tích',
-    color: '#881337', // Crimson / Burgundy
-    bgColor: '#ffe4e6',
-    borderColor: '#f43f5e',
+    color: '#e11d48',
+    bgColor: 'rgba(225, 29, 72, 0.15)',
+    borderColor: '#e11d48',
   },
   3: {
     generation: 3,
     roman: 'Đời III',
     title: 'Trung Hưng Dòng Tộc',
-    color: '#065f46', // Emerald / Jade
-    bgColor: '#d1fae5',
-    borderColor: '#10b981',
+    color: '#059669',
+    bgColor: 'rgba(5, 150, 105, 0.15)',
+    borderColor: '#059669',
   },
   4: {
     generation: 4,
     roman: 'Đời IV',
     title: 'Phúc Lộc Đương Thời',
-    color: '#1e3a8a', // Royal Indigo / Blue
-    bgColor: '#dbeafe',
-    borderColor: '#3b82f6',
+    color: '#2563eb',
+    bgColor: 'rgba(37, 99, 235, 0.15)',
+    borderColor: '#2563eb',
   },
   5: {
     generation: 5,
     roman: 'Đời V',
     title: 'Hậu Duệ Hưng Thịnh',
-    color: '#581c87', // Royal Purple
-    bgColor: '#f3e8ff',
-    borderColor: '#a855f7',
+    color: '#9333ea',
+    bgColor: 'rgba(147, 51, 234, 0.15)',
+    borderColor: '#9333ea',
   },
   6: {
     generation: 6,
     roman: 'Đời VI',
     title: 'Thế Hệ Mầm Non',
-    color: '#0f766e', // Teal
-    bgColor: '#ccfbf1',
-    borderColor: '#14b8a6',
+    color: '#0d9488',
+    bgColor: 'rgba(13, 148, 136, 0.15)',
+    borderColor: '#0d9488',
   },
 }
 
@@ -57,8 +57,8 @@ export function getGenerationStyle(gen: number): GenerationStyle {
     generation: gen,
     roman: `Đời ${gen}`,
     title: `Thế hệ thứ ${gen}`,
-    color: '#475569',
-    bgColor: '#f1f5f9',
-    borderColor: '#94a3b8',
+    color: '#64748b',
+    bgColor: 'rgba(100, 116, 139, 0.15)',
+    borderColor: '#64748b',
   }
 }

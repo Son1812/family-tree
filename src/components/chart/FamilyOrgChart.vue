@@ -1,66 +1,54 @@
 <template>
   <div class="flex flex-col h-full select-none">
     <!-- Toolbar trên sơ đồ -->
-    <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200 mb-3">
-      <div class="flex items-center gap-2">
-        <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Chế độ xem: Phả đồ Trực quan
+    <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-kyn-divider-dividers-1 mb-3">
+      <div class="flex items-center gap-2.5">
+        <span class="text-xs font-semibold uppercase tracking-wider text-kyn-text-subtitle hidden sm:inline">
+          Phả đồ:
         </span>
-        <span class="text-xs text-slate-400">·</span>
-        <button
-          type="button"
-          class="text-xs text-amber-700 hover:text-amber-800 font-medium hover:underline"
-          @click="expandAll"
-        >
-          Mở rộng tất cả
-        </button>
-        <span class="text-xs text-slate-300">|</span>
-        <button
-          type="button"
-          class="text-xs text-slate-600 hover:text-slate-800 hover:underline"
-          @click="collapseAll"
-        >
-          Thu gọn nhánh
-        </button>
+        <div class="inline-flex items-center p-0.5 rounded-lg bg-kyn-bg-secondary-2 border border-kyn-divider-dividers-2 text-xs font-medium">
+          <button
+            type="button"
+            class="px-3 py-1 rounded-md transition-all duration-150 flex items-center gap-1.5 cursor-pointer"
+            :class="
+              branchMode === 'expanded'
+                ? 'bg-kyn-bg-primary text-kyn-text-title font-bold shadow-xs'
+                : 'text-kyn-text-subtitle hover:text-kyn-text-primary'
+            "
+            @click="handleExpandAll"
+          >
+            <KynIcon name="maximize-2" :size="13" />
+            <span>Mở rộng tất cả</span>
+          </button>
+          <button
+            type="button"
+            class="px-3 py-1 rounded-md transition-all duration-150 flex items-center gap-1.5 cursor-pointer"
+            :class="
+              branchMode === 'collapsed'
+                ? 'bg-kyn-bg-primary text-kyn-text-title font-bold shadow-xs'
+                : 'text-kyn-text-subtitle hover:text-kyn-text-primary'
+            "
+            @click="handleCollapseAll"
+          >
+            <KynIcon name="minimize-2" :size="13" />
+            <span>Thu gọn nhánh</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Zoom / Pan controls -->
-      <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg border border-slate-200">
-        <button
-          type="button"
-          class="w-7 h-7 rounded bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold flex items-center justify-center text-sm shadow-sm transition-colors"
-          title="Thu nhỏ"
-          @click="zoomOut"
-        >
-          −
-        </button>
-        <span class="text-xs text-slate-600 w-12 text-center tabular-nums font-mono font-medium">
+      <!-- Zoom / Pan controls dùng AppButton KYN -->
+      <div class="flex items-center gap-1.5 bg-kyn-bg-secondary-2 p-1 rounded-lg border border-kyn-divider-dividers-2">
+        <AppButton variant="secondary" size="sm" title="Thu nhỏ" @click="zoomOut">−</AppButton>
+        <span class="text-xs text-kyn-text-subtitle w-12 text-center tabular-nums font-mono font-medium">
           {{ zoomPercent }}%
         </span>
-        <button
-          type="button"
-          class="w-7 h-7 rounded bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-bold flex items-center justify-center text-sm shadow-sm transition-colors"
-          title="Phóng to"
-          @click="zoomIn"
-        >
-          +
-        </button>
-        <button
-          type="button"
-          class="px-2.5 h-7 rounded bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium shadow-sm transition-colors"
-          title="Tự động thu phóng vừa khung hình"
-          @click="fit"
-        >
+        <AppButton variant="secondary" size="sm" title="Phóng to" @click="zoomIn">+</AppButton>
+        <AppButton variant="secondary" size="sm" title="Tự động thu phóng vừa khung hình" @click="fit">
           Vừa màn hình
-        </button>
-        <button
-          type="button"
-          class="px-2 h-7 rounded bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium shadow-sm transition-colors"
-          title="Về cỡ 100%"
-          @click="resetZoom"
-        >
+        </AppButton>
+        <AppButton variant="secondary" size="sm" title="Về cỡ 100%" @click="resetZoom">
           100%
-        </button>
+        </AppButton>
       </div>
     </div>
 
@@ -72,7 +60,7 @@
       <!-- Viewport cuộn + kéo rê chuột -->
       <div
         ref="viewportRef"
-        class="relative w-full h-[640px] rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50/70 to-slate-100/50 overflow-auto cursor-grab active:cursor-grabbing shadow-inner"
+        class="relative w-full h-[calc(100vh-230px)] min-h-[600px] rounded-2xl border border-kyn-divider-dividers-1 bg-kyn-bg-secondary-1 overflow-auto cursor-grab active:cursor-grabbing shadow-inner transition-colors"
         @mousedown="onMouseDown"
         @mousemove="onMouseMove"
         @mouseup="onMouseUp"
@@ -106,7 +94,7 @@
                 :key="i"
                 :points="seg"
                 fill="none"
-                stroke="#b45309"
+                stroke="var(--color-kyn-primary, #f9c216)"
                 stroke-width="3.5"
                 stroke-linejoin="round"
                 stroke-linecap="round"
@@ -121,25 +109,26 @@
     <!-- Breadcrumb Huyết thống (Khi có thành viên được chọn) -->
     <div
       v-if="bloodlineChain.length > 0"
-      class="mt-3 py-2 px-3 bg-amber-50/80 border border-amber-200/70 rounded-xl flex items-center gap-1.5 text-xs flex-wrap"
+      class="mt-3 py-2 px-3 bg-kyn-primary-tag-bg border border-kyn-primary-border/40 rounded-xl flex items-center gap-1.5 text-xs flex-wrap text-kyn-text-title transition-colors"
     >
-      <span class="font-bold text-amber-900 flex items-center gap-1">
-        <span>🩸</span> Dòng huyết mạch:
+      <span class="font-bold text-kyn-text-title flex items-center gap-1.5">
+        <KynIcon name="network" :size="13" class="text-amber-600 dark:text-amber-400" />
+        <span>Dòng huyết mạch:</span>
       </span>
       <template v-for="(id, i) in bloodlineChain" :key="id">
         <button
           type="button"
-          class="hover:underline transition-colors"
+          class="hover:underline transition-colors cursor-pointer"
           :class="
             id === selectedMemberId
-              ? 'text-amber-900 font-bold bg-amber-200/60 px-1.5 py-0.5 rounded'
-              : 'text-amber-800'
+              ? 'text-kyn-text-on-primary font-bold bg-kyn-primary px-2 py-0.5 rounded-md'
+              : 'text-kyn-text-primary'
           "
           @click="selectMember(id)"
         >
           {{ memberName(id) }}
         </button>
-        <span v-if="i < bloodlineChain.length - 1" class="text-amber-400">›</span>
+        <span v-if="i < bloodlineChain.length - 1" class="text-kyn-text-subtitle">›</span>
       </template>
     </div>
   </div>
@@ -147,6 +136,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from 'vue'
+import { AppButton, KynIcon } from '@kyn/vue-components'
 import type { FamilyMember } from '../../types/family'
 import FamilyOrgNode from './FamilyOrgNode.vue'
 import FamilyOrgLegend from './FamilyOrgLegend.vue'
@@ -174,6 +164,24 @@ const {
   expandAll,
   collapseAll,
 } = useFamilyTree()
+
+const branchMode = ref<'expanded' | 'collapsed'>('expanded')
+
+function handleExpandAll() {
+  branchMode.value = 'expanded'
+  expandAll()
+}
+
+function handleCollapseAll() {
+  branchMode.value = 'collapsed'
+  collapseAll()
+}
+
+watch(collapsedIds, (set) => {
+  if (set.size === 0) {
+    branchMode.value = 'expanded'
+  }
+})
 
 function memberName(id: string): string {
   const m = memberById.value.get(id)
@@ -254,7 +262,6 @@ let scrollLeft = 0
 let scrollTop = 0
 
 function onMouseDown(e: MouseEvent) {
-  // Chỉ kéo khi click vào nền viewport (không phải click vào button hay thẻ)
   const target = e.target as HTMLElement
   if (target.closest('.oc-box') || target.closest('button')) return
 

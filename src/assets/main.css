@@ -1,14 +1,32 @@
 @import "tailwindcss";
+@import "@kyn/vue-components/styles/theme.css";
+@source "../../node_modules/@kyn/vue-components/src";
+
+@font-face {
+  font-family: 'SF Pro VN';
+  src: url('@/assets/fonts/SF-Pro-VN.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 @theme {
-  --font-serif-heading: 'Playfair Display', Georgia, serif;
-  --font-cinzel: 'Cinzel', serif;
-  
-  --color-heritage-red: #881337;
-  --color-heritage-gold: #b45309;
-  --color-heritage-amber: #f59e0b;
-  --color-heritage-jade: #065f46;
-  --color-heritage-ink: #1e293b;
+  --font-sans: 'SF Pro VN', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-heading: 'SF Pro VN', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'SF Pro VN', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+*, *::before, *::after {
+  font-family: var(--font-sans);
+}
+
+html, body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background-color: var(--color-kyn-bg-secondary-1, #f9faf9);
+  color: var(--color-kyn-text-title, #333333);
 }
 
 /* Custom scrollbars */
@@ -17,12 +35,12 @@
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--color-kyn-bg-secondary-1, #f1f5f9);
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--color-kyn-neutral-5, #cbd5e1);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--color-kyn-neutral-6, #94a3b8);
 }

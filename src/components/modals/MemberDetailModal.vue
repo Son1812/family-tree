@@ -1,275 +1,268 @@
 <template>
-  <div
-    v-if="member"
-    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
-    @click.self="$emit('close')"
+  <AppModal
+    :model-value="!!member"
+    :title="member?.fullName || ''"
+    :subtitle="member?.courtesyName ? `Tên gọi khác: ${member.courtesyName}` : (member ? genStyle.roman : '')"
+    :close-on-backdrop="false"
+    size="lg"
+    @update:model-value="(val) => !val && $emit('close')"
   >
-    <div
-      class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
-    >
-      <!-- Header với dải màu thế hệ -->
-      <div
-        class="relative p-6 border-b border-slate-100 flex items-start justify-between"
-        :style="{
-          background: `linear-gradient(135deg, ${genStyle.bgColor} 0%, #ffffff 100%)`,
-        }"
-      >
-        <div class="flex items-center gap-4">
-          <div
-            class="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold border-2 shadow-sm flex-none"
-            :class="[
-              member.gender === 'male'
-                ? 'bg-sky-50 text-sky-800 border-sky-300'
-                : 'bg-rose-50 text-rose-800 border-rose-300',
-            ]"
+    <template #header>
+      <div v-if="member" class="space-y-1 text-left">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span
+            class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+            :style="{ background: genStyle.color, color: '#ffffff' }"
           >
-            <img
-              v-if="member.avatar"
-              :src="member.avatar"
-              :alt="member.fullName"
-              class="w-full h-full object-cover rounded-full"
-            />
-            <span v-else>{{ member.gender === 'male' ? 'Cụ Ông' : 'Cụ Bà' }}</span>
-          </div>
+            {{ genStyle.roman }}
+          </span>
+          <AppBadge :tone="member.isAlive ? 'success' : 'neutral'">
+            {{ member.isAlive ? 'Còn sống' : 'Đã tạ thế' }}
+          </AppBadge>
+          <span
+            class="px-2 py-0.5 rounded-full text-[10px] font-semibold"
+            :class="member.gender === 'male' ? 'bg-sky-500/10 text-sky-600' : 'bg-rose-500/10 text-rose-600'"
+          >
+            {{ member.gender === 'male' ? 'Nam (Đinh)' : 'Nữ' }}
+          </span>
+        </div>
+        <h2 class="text-xl font-bold text-kyn-text-title tracking-tight mt-0.5">{{ member.fullName }}</h2>
+        <p v-if="member.courtesyName" class="text-xs text-amber-700 dark:text-amber-400 italic">
+          Tên gọi khác: {{ member.courtesyName }}
+        </p>
+      </div>
+    </template>
 
-          <div>
-            <div class="flex items-center gap-2 flex-wrap">
-              <span
-                class="px-2.5 py-0.5 rounded-full text-xs font-bold"
-                :style="{ background: genStyle.color, color: '#ffffff' }"
-              >
-                {{ genStyle.roman }} - {{ member.branch }}
+    <!-- Body nội dung -->
+    <div v-if="member" class="space-y-5 text-sm text-kyn-text-primary">
+      <!-- Thông tin cơ bản dạng grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 bg-kyn-bg-secondary-2 p-4 rounded-xl border border-kyn-divider-dividers-1">
+        <div>
+          <span class="text-xs text-kyn-text-subtitle block">Vai vế dòng họ</span>
+          <span class="font-semibold text-kyn-text-title">{{ member.orderTitle || '—' }}</span>
+        </div>
+        <div>
+          <span class="text-xs text-kyn-text-subtitle block">Giới tính</span>
+          <span class="font-semibold text-kyn-text-title">{{ member.gender === 'male' ? 'Nam (Đinh)' : 'Nữ' }}</span>
+        </div>
+        <div>
+          <span class="text-xs text-kyn-text-subtitle block">Năm sinh / Sinh nhật</span>
+          <span class="font-semibold text-kyn-text-title">
+            {{ member.birthDate || 'Chưa rõ' }}
+            <span v-if="member.birthDateLunar" class="text-xs text-kyn-text-subtitle">({{ member.birthDateLunar }})</span>
+          </span>
+        </div>
+        <div>
+          <span class="text-xs text-kyn-text-subtitle block">{{ member.isAlive ? 'Tình trạng' : 'Ngày mất / Ngày giỗ' }}</span>
+          <span class="font-semibold text-kyn-text-title">
+            <template v-if="member.isAlive">Còn sống</template>
+            <template v-else>
+              {{ member.deathDate || '—' }}
+              <span v-if="member.deathDateLunar" class="text-amber-600 dark:text-amber-400 font-bold ml-1">
+                (Giỗ: {{ member.deathDateLunar }} ÂL)
               </span>
-              <span
-                class="px-2 py-0.5 rounded-full text-xs font-medium"
-                :class="
-                  member.isAlive
-                    ? 'bg-emerald-100 text-emerald-800'
-                    : 'bg-amber-100 text-amber-900'
-                "
-              >
-                {{ member.isAlive ? '🟢 Còn sống' : '🕊️ Đã quy tiên' }}
-              </span>
-            </div>
-
-            <h2 class="text-2xl font-bold text-slate-800 mt-1 font-serif">
-              {{ member.fullName }}
-            </h2>
-            <p v-if="member.courtesyName" class="text-xs text-amber-800 italic font-serif">
-              {{ member.courtesyName }}
-            </p>
-          </div>
+            </template>
+          </span>
+        </div>
+        <div v-if="member.burialPlace" class="md:col-span-2">
+          <span class="text-xs text-kyn-text-subtitle block">Mộ phần / Nơi an táng</span>
+          <span class="font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+            <span>📍</span> {{ member.burialPlace }}
+          </span>
+        </div>
+        <div v-if="member.address" class="md:col-span-2">
+          <span class="text-xs text-kyn-text-subtitle block">Nơi ở / Cư trú</span>
+          <span class="text-kyn-text-title">
+            <span>🏠 {{ member.address }}</span>
+          </span>
         </div>
 
-        <button
-          type="button"
-          class="w-8 h-8 rounded-full hover:bg-slate-200/60 text-slate-500 flex items-center justify-center text-lg transition-colors"
-          @click="$emit('close')"
-        >
-          ✕
-        </button>
+        <!-- Thông tin Phụ mẫu (Cha & Mẹ) -->
+        <div v-if="parentMember" class="md:col-span-2 bg-kyn-bg-secondary-1 p-2.5 rounded-lg border border-kyn-divider-dividers-2">
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+            <div>
+              <span class="text-kyn-text-subtitle">Phụ thân (Cha): </span>
+              <span class="font-bold text-kyn-text-title">{{ parentMember.fullName }}</span>
+            </div>
+            <div v-if="member.motherName">
+              <span class="text-kyn-text-subtitle">Mẫu thân (Mẹ): </span>
+              <span class="font-bold text-amber-600 dark:text-amber-400">{{ member.motherName }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Body nội dung cuộn -->
-      <div class="p-6 overflow-y-auto space-y-6 text-sm text-slate-700">
-        <!-- Thông tin cơ bản -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50/80 p-4 rounded-xl border border-slate-100">
-          <div>
-            <span class="text-xs text-slate-400 block">Vai vế dòng họ</span>
-            <span class="font-semibold text-slate-800">{{ member.orderTitle || '—' }}</span>
-          </div>
-          <div>
-            <span class="text-xs text-slate-400 block">Giới tính</span>
-            <span class="font-semibold text-slate-800">{{ member.gender === 'male' ? 'Nam (Đinh)' : 'Nữ' }}</span>
-          </div>
-          <div>
-            <span class="text-xs text-slate-400 block">Năm sinh / Sinh nhật</span>
-            <span class="font-semibold text-slate-800">
-              {{ member.birthDate || 'Chưa rõ' }}
-              <span v-if="member.birthDateLunar" class="text-xs text-slate-500">({{ member.birthDateLunar }})</span>
-            </span>
-          </div>
-          <div>
-            <span class="text-xs text-slate-400 block">{{ member.isAlive ? 'Tình trạng' : 'Năm tạ thế / Ngày giỗ' }}</span>
-            <span class="font-semibold text-slate-800">
-              <template v-if="member.isAlive">Còn sống</template>
-              <template v-else>
-                {{ member.deathDate || '—' }}
-                <span v-if="member.deathDateLunar" class="text-amber-700 font-bold ml-1">
-                  (Giỗ: {{ member.deathDateLunar }} ÂL)
-                </span>
-              </template>
-            </span>
-          </div>
-          <div v-if="member.burialPlace" class="md:col-span-2">
-            <span class="text-xs text-slate-400 block">Mộ phần / Nơi an táng</span>
-            <span class="font-semibold text-amber-900 flex items-center gap-1">
-              <span>📍</span> {{ member.burialPlace }}
-            </span>
-          </div>
-          <div v-if="member.phone || member.address" class="md:col-span-2">
-            <span class="text-xs text-slate-400 block">Liên hệ / Cư trú</span>
-            <span class="text-slate-700">
-              <span v-if="member.phone">📞 {{ member.phone }} </span>
-              <span v-if="member.address">🏠 {{ member.address }}</span>
-            </span>
-          </div>
+      <!-- Phối ngẫu & Thê thiếp (Một chồng có thể có nhiều vợ) -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-kyn-text-title flex items-center gap-1.5 text-sm">
+            <span>💍</span> {{ member.gender === 'male' ? 'Phối ngẫu & Thê thiếp' : 'Phối ngẫu (Phu quân)' }} ({{ member.spouses?.length || 0 }})
+          </h3>
+          <AppButton variant="secondary" size="sm" @click="$emit('addSpouse', member)">
+            <KynIcon name="plus" :size="14" />
+            <span>Thêm {{ member.gender === 'male' ? 'vợ' : 'chồng' }}</span>
+          </AppButton>
         </div>
 
-        <!-- Phối ngẫu (Vợ / Chồng) -->
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-bold text-slate-800 flex items-center gap-2">
-              <span>💍</span> Phối ngẫu (Vợ / Chồng)
-            </h3>
-            <button
-              type="button"
-              class="text-xs text-amber-700 hover:text-amber-800 font-semibold flex items-center gap-1"
-              @click="$emit('addSpouse', member)"
-            >
-              + Thêm phối ngẫu
-            </button>
-          </div>
-
+        <div
+          v-if="!member.spouses || member.spouses.length === 0"
+          class="text-xs text-kyn-text-subtitle italic py-2"
+        >
+          Chưa có thông tin phối ngẫu
+        </div>
+        <div v-else class="space-y-2.5">
           <div
-            v-if="!member.spouses || member.spouses.length === 0"
-            class="text-xs text-slate-400 italic py-2"
+            v-for="sp in member.spouses"
+            :key="sp.id"
+            class="p-3 bg-kyn-bg-secondary-2 rounded-xl border border-kyn-divider-dividers-1 flex flex-col gap-2"
           >
-            Chưa có thông tin phối ngẫu
-          </div>
-          <div v-else class="space-y-2">
-            <div
-              v-for="sp in member.spouses"
-              :key="sp.id"
-              class="p-3 bg-amber-50/50 rounded-xl border border-amber-100 flex items-start justify-between gap-3"
-            >
+            <div class="flex items-start justify-between gap-3">
               <div>
-                <div class="font-bold text-slate-800 text-sm">
-                  {{ sp.title || 'Vợ' }}: {{ sp.fullName }}
+                <div class="flex items-center gap-2 flex-wrap">
                   <span
-                    class="text-xs px-2 py-0.5 rounded-full ml-1"
-                    :class="sp.isAlive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'"
+                    class="px-2 py-0.5 rounded text-[11px]"
+                    :class="getSpouseBadgeClass(sp.title)"
+                  >
+                    {{ sp.title || (member.gender === 'male' ? 'Vợ' : 'Chồng') }}
+                  </span>
+                  <span class="font-bold text-kyn-text-title text-sm">
+                    {{ sp.fullName }}
+                  </span>
+                  <span
+                    class="text-[10px] px-2 py-0.5 rounded-full"
+                    :class="sp.isAlive ? 'bg-kyn-success-tag-bg text-kyn-success-pressed-active' : 'bg-kyn-bg-secondary-3 text-kyn-text-secondary'"
                   >
                     {{ sp.isAlive ? 'Còn sống' : 'Đã mất' }}
                   </span>
                 </div>
-                <div class="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-3">
+                <div class="text-xs text-kyn-text-subtitle mt-1 flex flex-wrap gap-x-3">
                   <span v-if="sp.birthYear || sp.deathYear">
                     Năm: {{ sp.birthYear || '?' }} – {{ sp.isAlive ? 'nay' : (sp.deathYear || '?') }}
                   </span>
-                  <span v-if="!sp.isAlive && sp.deathDateLunar" class="text-amber-800 font-medium">
+                  <span v-if="!sp.isAlive && sp.deathDateLunar" class="text-amber-600 dark:text-amber-400 font-medium">
                     Giỗ: {{ sp.deathDateLunar }} ÂL
                   </span>
                   <span v-if="sp.origin">Quê quán: {{ sp.origin }}</span>
                 </div>
-                <div v-if="sp.burialPlace" class="text-xs text-amber-900 mt-1">
+                <div v-if="sp.burialPlace" class="text-xs text-amber-700 dark:text-amber-400 mt-1">
                   Mộ phần: {{ sp.burialPlace }}
                 </div>
-                <div v-if="sp.bio" class="text-xs text-slate-600 mt-1 italic">
+                <div v-if="sp.bio" class="text-xs text-kyn-text-subtitle mt-1 italic">
                   "{{ sp.bio }}"
                 </div>
               </div>
 
               <button
                 type="button"
-                class="text-xs text-rose-500 hover:text-rose-700 hover:underline flex-none"
+                class="text-xs text-kyn-error-primary hover:underline flex-none cursor-pointer"
                 title="Xóa phối ngẫu"
                 @click="$emit('removeSpouse', member.id, sp.id)"
               >
                 Xóa
               </button>
             </div>
-          </div>
-        </div>
 
-        <!-- Danh sách Con cái -->
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="font-bold text-slate-800 flex items-center gap-2">
-              <span>🌿</span> Các con ({{ member.children?.length || 0 }})
-            </h3>
-            <button
-              type="button"
-              class="text-xs text-amber-700 hover:text-amber-800 font-semibold flex items-center gap-1"
-              @click="$emit('addChild', member)"
+            <!-- Các con do bà này sinh hạ -->
+            <div
+              v-if="childrenByMother(sp.id).length > 0"
+              class="pt-2 border-t border-kyn-divider-dividers-1/60 text-xs"
             >
-              + Thêm con
-            </button>
-          </div>
-
-          <div
-            v-if="!member.children || member.children.length === 0"
-            class="text-xs text-slate-400 italic py-2"
-          >
-            Chưa có thông tin con cái
-          </div>
-          <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button
-              v-for="c in member.children"
-              :key="c.id"
-              type="button"
-              class="text-left p-2.5 rounded-lg border border-slate-200 hover:border-amber-500 hover:bg-amber-50/40 transition-colors flex items-center justify-between group"
-              @click="$emit('focusMember', c.id)"
-            >
-              <div>
-                <span class="font-semibold text-slate-800 group-hover:text-amber-900 text-xs">
-                  {{ c.fullName }}
-                </span>
-                <span v-if="c.orderTitle" class="text-[11px] text-amber-800 block">
-                  {{ c.orderTitle }}
-                </span>
+              <span class="text-kyn-text-subtitle font-medium">
+                Con do bà sinh hạ ({{ childrenByMother(sp.id).length }}):
+              </span>
+              <div class="flex flex-wrap gap-1.5 mt-1">
+                <button
+                  v-for="child in childrenByMother(sp.id)"
+                  :key="child.id"
+                  type="button"
+                  class="px-2 py-0.5 rounded bg-kyn-bg-primary border border-kyn-divider-dividers-2 hover:border-kyn-primary text-[11px] font-semibold text-kyn-text-title transition-colors cursor-pointer"
+                  @click="$emit('focusMember', child.id)"
+                >
+                  {{ child.fullName }} {{ child.orderTitle ? `(${child.orderTitle})` : '' }}
+                </button>
               </div>
-              <span class="text-xs text-slate-400 group-hover:translate-x-1 transition-transform">→</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Tiểu sử & Công trạng -->
-        <div v-if="member.bio">
-          <h3 class="font-bold text-slate-800 flex items-center gap-2 mb-1.5">
-            <span>📜</span> Tiểu sử & Công trạng
-          </h3>
-          <div class="p-3.5 bg-amber-50/30 border border-amber-200/50 rounded-xl text-slate-700 leading-relaxed font-serif text-sm">
-            {{ member.bio }}
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Footer thao tác -->
-      <div class="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-        <button
-          type="button"
-          class="px-4 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
-          @click="$emit('delete', member)"
-        >
-          Xóa thành viên
-        </button>
+      <!-- Danh sách Con cái -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="font-bold text-kyn-text-title flex items-center gap-1.5 text-sm">
+            <span>🌿</span> Các con ({{ member.children?.length || 0 }})
+          </h3>
+          <AppButton variant="ghost" size="sm" @click="$emit('addChild', member)">
+            <KynIcon name="plus" :size="14" />
+            <span>Thêm con</span>
+          </AppButton>
+        </div>
 
-        <div class="flex items-center gap-2">
+        <div
+          v-if="!member.children || member.children.length === 0"
+          class="text-xs text-kyn-text-subtitle italic py-2"
+        >
+          Chưa có thông tin con cái
+        </div>
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button
+            v-for="c in member.children"
+            :key="c.id"
             type="button"
-            class="px-4 py-2 rounded-xl text-xs font-semibold bg-amber-700 hover:bg-amber-800 text-white shadow-sm transition-colors"
-            @click="$emit('edit', member)"
+            class="text-left p-2.5 rounded-lg border border-kyn-divider-dividers-1 hover:border-kyn-primary hover:bg-kyn-bg-secondary-2 transition-colors flex items-center justify-between group cursor-pointer"
+            @click="$emit('focusMember', c.id)"
           >
-            Sửa thông tin
+            <div>
+              <span class="font-semibold text-kyn-text-title group-hover:text-kyn-primary text-xs">
+                {{ c.fullName }}
+              </span>
+              <span v-if="c.orderTitle" class="text-[11px] text-amber-600 dark:text-amber-400 block">
+                {{ c.orderTitle }}
+              </span>
+            </div>
+            <span class="text-xs text-kyn-text-subtitle group-hover:translate-x-1 transition-transform">→</span>
           </button>
-          <button
-            type="button"
-            class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-200 hover:bg-slate-300 text-slate-700 transition-colors"
-            @click="$emit('close')"
-          >
-            Đóng
-          </button>
+        </div>
+      </div>
+
+      <!-- Tiểu sử & Công trạng -->
+      <div v-if="member.bio">
+        <h3 class="font-bold text-kyn-text-title flex items-center gap-1.5 mb-1.5 text-sm">
+          <span>📜</span> Tiểu sử & Công trạng
+        </h3>
+        <div class="p-3.5 bg-kyn-bg-secondary-2 border border-kyn-divider-dividers-1 rounded-xl text-kyn-text-primary leading-relaxed text-sm">
+          {{ member.bio }}
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- Footer thao tác dùng AppButton KYN -->
+    <template #footer>
+      <div v-if="member" class="w-full flex items-center justify-between">
+        <AppButton variant="danger" size="sm" @click="$emit('delete', member)">
+          Xóa thành viên
+        </AppButton>
+
+        <div class="flex items-center gap-2">
+          <AppButton variant="primary" size="sm" @click="$emit('edit', member)">
+            <KynIcon name="pencil" :size="14" />
+            <span>Sửa thông tin</span>
+          </AppButton>
+          <AppButton variant="secondary" size="sm" @click="$emit('close')">
+            Đóng
+          </AppButton>
+        </div>
+      </div>
+    </template>
+  </AppModal>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { AppModal, AppButton, AppBadge, KynIcon } from '@kyn/vue-components'
 import type { FamilyMember } from '../../types/family'
 import { getGenerationStyle } from '../../data/generationStyles'
+import { useFamilyTree } from '../../composables/useFamilyTree'
 
 const props = defineProps<{
   member: FamilyMember | null
@@ -284,6 +277,33 @@ defineEmits<{
   focusMember: [memberId: string]
   delete: [member: FamilyMember]
 }>()
+
+const { memberById } = useFamilyTree()
+
+const parentMember = computed(() => {
+  if (!props.member?.parentId) return null
+  return memberById.value.get(props.member.parentId) ?? null
+})
+
+function childrenByMother(spouseId: string): FamilyMember[] {
+  if (!props.member?.children) return []
+  return props.member.children.filter((c) => c.motherId === spouseId)
+}
+
+function getSpouseBadgeClass(title?: string) {
+  if (!title) return 'bg-kyn-bg-secondary-2 text-kyn-text-secondary border border-kyn-divider-dividers-2'
+  const t = title.toLowerCase()
+  if (t.includes('chính thất') || t.includes('nguyên phối') || t.includes('bà cả')) {
+    return 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-bold'
+  }
+  if (t.includes('kế thất') || t.includes('bà kế')) {
+    return 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 font-bold'
+  }
+  if (t.includes('trắc thất') || t.includes('thứ thất') || t.includes('bà hai') || t.includes('bà ba') || t.includes('vợ lẽ') || t.includes('á thất')) {
+    return 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold'
+  }
+  return 'bg-kyn-bg-secondary-2 text-kyn-text-secondary border border-kyn-divider-dividers-2 font-medium'
+}
 
 const genStyle = computed(() => {
   return props.member ? getGenerationStyle(props.member.generation) : getGenerationStyle(1)

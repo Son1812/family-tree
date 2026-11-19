@@ -1,10 +1,10 @@
 <template>
-  <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col gap-4">
+  <div class="bg-kyn-bg-primary rounded-kyn-4 border border-kyn-divider-dividers-2 shadow-xs p-5 flex flex-col gap-4 transition-colors duration-200">
     <!-- Header & Bộ lọc -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h2 class="text-lg font-bold text-slate-800 font-serif">Danh Sách Thành Viên Phả Ký</h2>
-        <p class="text-xs text-slate-500">Tra cứu thông tin chi tiết, thế hệ, mộ phần và ngày giỗ</p>
+        <h2 class="text-lg font-bold text-kyn-text-title">Danh Sách Thành Viên Phả Ký</h2>
+        <p class="text-xs text-kyn-text-subtitle">Tra cứu thông tin chi tiết, thế hệ, mộ phần và ngày giỗ</p>
       </div>
 
       <!-- Thanh công cụ tìm kiếm và lọc -->
@@ -14,24 +14,27 @@
             v-model="searchQuery"
             type="text"
             placeholder="Tìm theo tên, năm sinh..."
-            class="pl-8 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:border-amber-600 outline-none w-52 bg-slate-50/50"
+            class="pl-8 pr-3 py-1.5 text-xs rounded-kyn-2 border border-kyn-divider-dividers-2 focus:border-kyn-primary focus:ring-1 focus:ring-kyn-primary outline-none w-52 bg-kyn-bg-secondary-2 text-kyn-text-title placeholder:text-kyn-text-subtitle transition-all"
           />
-          <span class="absolute left-2.5 top-1.5 text-slate-400 text-xs">🔍</span>
+          <span class="absolute left-2.5 top-2 text-kyn-icon-tertiary">
+            <KynIcon name="search" :size="14" />
+          </span>
         </div>
 
         <!-- Lọc theo đời -->
         <select
           v-model="selectedGen"
-          class="px-2.5 py-1.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-700 outline-none"
+          class="px-2.5 py-1.5 text-xs rounded-kyn-2 border border-kyn-divider-dividers-2 bg-kyn-bg-secondary-2 text-kyn-text-title outline-none focus:border-kyn-primary cursor-pointer"
         >
           <option :value="null">Tất cả thế hệ (Đời)</option>
           <option v-for="g in maxGen" :key="g" :value="g">Đời thứ {{ g }}</option>
         </select>
 
-        <!-- Lọc theo chi -->
+        <!-- Lọc theo chi (chỉ hiện khi có nhiều chi) -->
         <select
+          v-if="branches.length > 1"
           v-model="selectedBranch"
-          class="px-2.5 py-1.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-700 outline-none"
+          class="px-2.5 py-1.5 text-xs rounded-kyn-2 border border-kyn-divider-dividers-2 bg-kyn-bg-secondary-2 text-kyn-text-title outline-none focus:border-kyn-primary cursor-pointer"
         >
           <option :value="null">Tất cả chi phái</option>
           <option v-for="b in branches" :key="b" :value="b">{{ b }}</option>
@@ -40,7 +43,7 @@
         <!-- Lọc tình trạng -->
         <select
           v-model="selectedStatus"
-          class="px-2.5 py-1.5 text-xs rounded-xl border border-slate-300 bg-white text-slate-700 outline-none"
+          class="px-2.5 py-1.5 text-xs rounded-kyn-2 border border-kyn-divider-dividers-2 bg-kyn-bg-secondary-2 text-kyn-text-title outline-none focus:border-kyn-primary cursor-pointer"
         >
           <option value="all">Tất cả tình trạng</option>
           <option value="alive">Còn sống</option>
@@ -50,25 +53,25 @@
     </div>
 
     <!-- Bảng danh sách -->
-    <div class="overflow-x-auto rounded-xl border border-slate-200">
+    <div class="overflow-x-auto rounded-kyn-3 border border-kyn-divider-dividers-2">
       <table class="w-full text-left text-xs border-collapse">
-        <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
+        <thead class="bg-kyn-bg-secondary-2 border-b border-kyn-divider-dividers-2 text-kyn-text-subtitle font-semibold uppercase tracking-wider text-[11px]">
           <tr>
             <th class="py-3 px-4">Thành viên</th>
             <th class="py-3 px-3">Thế hệ</th>
-            <th class="py-3 px-3">Chi phái</th>
+            <th v-if="branches.length > 1" class="py-3 px-3">Chi phái</th>
             <th class="py-3 px-3">Vai vế</th>
-            <th class="py-3 px-3">Năm sinh – mất</th>
+            <th class="py-3 px-3">Sinh – Mất</th>
             <th class="py-3 px-3">Ngày giỗ (ÂL)</th>
             <th class="py-3 px-3">Phối ngẫu</th>
             <th class="py-3 px-4 text-right">Thao tác</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
+        <tbody class="divide-y divide-kyn-divider-dividers-1">
           <tr
             v-for="m in filteredMembers"
             :key="m.id"
-            class="hover:bg-amber-50/40 transition-colors"
+            class="hover:bg-kyn-bg-secondary-1 transition-colors"
           >
             <!-- Tên & Giới tính -->
             <td class="py-3 px-4">
@@ -77,18 +80,24 @@
                   class="w-7 h-7 rounded-full flex items-center justify-center font-bold text-[11px] flex-none border"
                   :class="
                     m.gender === 'male'
-                      ? 'bg-sky-50 text-sky-800 border-sky-200'
-                      : 'bg-rose-50 text-rose-800 border-rose-200'
+                      ? 'bg-sky-500/10 text-sky-600 border-sky-500/20'
+                      : 'bg-rose-500/10 text-rose-600 border-rose-500/20'
                   "
                 >
                   {{ m.gender === 'male' ? 'Nam' : 'Nữ' }}
                 </span>
                 <div>
-                  <div class="font-bold text-slate-800 text-[13px] hover:text-amber-900 cursor-pointer" @click="$emit('viewDetail', m)">
+                  <div
+                    class="font-bold text-kyn-text-title text-[13px] hover:text-amber-600 cursor-pointer transition-colors"
+                    @click="emit('view-detail', m)"
+                  >
                     {{ m.fullName }}
                   </div>
-                  <div v-if="m.courtesyName" class="text-[11px] text-amber-800 italic">
+                  <div v-if="m.courtesyName" class="text-[11px] text-amber-600 italic">
                     {{ m.courtesyName }}
+                  </div>
+                  <div v-if="m.motherName" class="text-[10.5px] text-kyn-text-subtitle italic">
+                    Mẹ: {{ m.motherName }}
                   </div>
                 </div>
               </div>
@@ -107,20 +116,20 @@
               </span>
             </td>
 
-            <!-- Chi -->
-            <td class="py-3 px-3 font-medium text-slate-700">
+            <!-- Chi (chỉ hiện khi có nhiều chi) -->
+            <td v-if="branches.length > 1" class="py-3 px-3 font-medium text-kyn-text-primary">
               {{ m.branch }}
             </td>
 
             <!-- Vai vế -->
-            <td class="py-3 px-3 text-slate-600">
+            <td class="py-3 px-3 text-kyn-text-secondary">
               {{ m.orderTitle || '—' }}
             </td>
 
             <!-- Năm sinh - mất -->
-            <td class="py-3 px-3 text-slate-600">
+            <td class="py-3 px-3 text-kyn-text-secondary">
               <span>{{ m.birthDate || '?' }}</span> –
-              <span :class="m.isAlive ? 'text-emerald-700 font-semibold' : ''">
+              <span :class="m.isAlive ? 'text-emerald-600 font-semibold' : ''">
                 {{ m.isAlive ? 'Còn sống' : (m.deathDate || '?') }}
               </span>
             </td>
@@ -129,57 +138,70 @@
             <td class="py-3 px-3">
               <span
                 v-if="!m.isAlive && m.deathDateLunar"
-                class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 font-bold text-[11px]"
+                class="px-2 py-0.5 rounded-kyn-1 bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold text-[11px]"
               >
                 {{ m.deathDateLunar }}
               </span>
-              <span v-else class="text-slate-400">—</span>
+              <span v-else class="text-kyn-text-disable">—</span>
             </td>
 
             <!-- Phối ngẫu -->
-            <td class="py-3 px-3 text-slate-600">
-              <div v-if="m.spouses && m.spouses.length > 0" class="flex flex-col gap-0.5">
-                <span v-for="sp in m.spouses" :key="sp.id" class="text-[11px]">
-                  {{ sp.fullName }}
+            <td class="py-3 px-3 text-kyn-text-secondary">
+              <div v-if="m.spouses && m.spouses.length > 0" class="flex flex-col gap-1">
+                <span v-for="sp in m.spouses" :key="sp.id" class="text-[11px] flex items-center gap-1 flex-wrap">
+                  <span class="text-[9.5px] px-1 py-0.2 rounded font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/20">
+                    {{ sp.title || 'Vợ' }}
+                  </span>
+                  <span class="font-medium text-kyn-text-title">{{ sp.fullName }}</span>
                 </span>
               </div>
-              <span v-else class="text-slate-400">—</span>
+              <span v-else class="text-kyn-text-disable">—</span>
             </td>
 
             <!-- Thao tác -->
             <td class="py-3 px-4 text-right">
               <div class="flex items-center justify-end gap-1.5">
-                <button
-                  type="button"
-                  class="px-2 py-1 rounded bg-slate-100 hover:bg-amber-100 text-slate-700 hover:text-amber-900 font-semibold transition-colors"
+                <AppButton
+                  size="sm"
+                  variant="secondary"
                   title="Định vị trên sơ đồ phả hệ"
-                  @click="$emit('locateOnTree', m.id)"
+                  @click="emit('locate-on-tree', m.id)"
                 >
-                  Cây 🌳
-                </button>
-                <button
-                  type="button"
-                  class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                  <KynIcon name="git-branch" :size="12" />
+                  <span>Cây</span>
+                </AppButton>
+                <AppButton
+                  size="sm"
+                  variant="ghost"
                   title="Xem hồ sơ"
-                  @click="$emit('viewDetail', m)"
+                  @click="emit('view-detail', m)"
                 >
-                  Xem
-                </button>
-                <button
-                  type="button"
-                  class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+                  <KynIcon name="eye" :size="14" />
+                </AppButton>
+                <AppButton
+                  size="sm"
+                  variant="ghost"
                   title="Sửa"
-                  @click="$emit('edit', m)"
+                  @click="emit('edit', m)"
                 >
-                  Sửa
-                </button>
+                  <KynIcon name="pencil" :size="14" />
+                </AppButton>
+                <AppButton
+                  size="sm"
+                  variant="ghost"
+                  title="Xóa thành viên"
+                  class="text-kyn-error-primary hover:bg-kyn-error-tag-bg hover:text-kyn-error-pressed-active"
+                  @click="emit('delete', m)"
+                >
+                  <KynIcon name="trash-2" :size="14" />
+                </AppButton>
               </div>
             </td>
           </tr>
         </tbody>
       </table>
 
-      <div v-if="filteredMembers.length === 0" class="py-12 text-center text-slate-400 text-sm">
+      <div v-if="filteredMembers.length === 0" class="py-12 text-center text-kyn-text-subtitle text-sm">
         Không tìm thấy thành viên nào phù hợp với bộ lọc
       </div>
     </div>
@@ -188,14 +210,16 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { AppButton, KynIcon } from '@kyn/vue-components'
 import type { FamilyMember } from '../types/family'
 import { useFamilyTree } from '../composables/useFamilyTree'
 import { getGenerationStyle } from '../data/generationStyles'
 
-defineEmits<{
-  viewDetail: [member: FamilyMember]
-  edit: [member: FamilyMember]
-  locateOnTree: [memberId: string]
+const emit = defineEmits<{
+  (e: 'view-detail', member: FamilyMember): void
+  (e: 'edit', member: FamilyMember): void
+  (e: 'locate-on-tree', memberId: string): void
+  (e: 'delete', member: FamilyMember): void
 }>()
 
 const { flatMembers, stats } = useFamilyTree()

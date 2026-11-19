@@ -8,160 +8,144 @@
         'oc-box--deceased': !node.isAlive,
       }"
       :data-node-id="node.id"
-      :style="{ '--node-accent': genStyle.color }"
+      :style="{
+        '--node-accent': genStyle.color,
+        'width': boxWidth + 'px',
+      }"
       @click="ctx.onSelect(node)"
     >
+      <!-- Mũi tên CAD chỉ từ nhánh trên xuống đỉnh giữa hộp (cho các đời từ Đời II trở đi) -->
+      <div v-if="node.generation > 1" class="oc-box-arrow" aria-hidden="true"></div>
+
       <!-- Top accent stripe for Generation -->
       <div
-        class="absolute top-0 left-0 right-0 h-1.5 rounded-t-[10px]"
+        class="absolute top-0 left-0 right-0 h-1 rounded-t-[5px]"
         :style="{ background: genStyle.color }"
       ></div>
 
-      <!-- Header row: Generation badge & Branch tag -->
-      <div class="flex items-center justify-between gap-1 w-full text-[11px] font-medium pt-0.5">
-        <span
-          class="px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide"
-          :style="{ background: genStyle.bgColor, color: genStyle.color }"
-        >
-          {{ genStyle.roman }}
-        </span>
-        <span class="text-slate-500 font-sans text-[11px] truncate" :title="node.branch">
-          {{ node.branch }}
-        </span>
-      </div>
+      <!-- Header row: Generation badge & Order title & Alive dot & Action menu -->
+      <div class="flex items-center justify-between gap-1 w-full text-[11px] font-medium px-2.5 py-1 bg-kyn-bg-secondary-2/80 border-b border-kyn-divider-dividers-2 rounded-t-[5px] select-none">
+        <div class="flex items-center gap-1.5 min-w-0">
+          <span
+            class="px-1.5 py-0.2 rounded text-[10px] font-bold tracking-wide flex-none"
+            :style="{ background: genStyle.bgColor, color: genStyle.color }"
+          >
+            {{ genStyle.roman }}
+          </span>
+          <span v-if="node.orderTitle" class="text-amber-600 dark:text-amber-400 text-[10.5px] font-medium truncate">
+            {{ node.orderTitle }}
+          </span>
+        </div>
 
-      <!-- Primary Member Info -->
-      <div class="flex items-start gap-2.5 w-full mt-1.5">
-        <!-- Avatar / Gender badge -->
-        <div
-          class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-none shadow-sm relative border"
-          :class="[
-            node.gender === 'male'
-              ? 'bg-sky-50 text-sky-800 border-sky-200'
-              : 'bg-rose-50 text-rose-800 border-rose-200',
-          ]"
-        >
-          <img
-            v-if="node.avatar"
-            :src="node.avatar"
-            :alt="node.fullName"
-            class="w-full h-full object-cover rounded-full"
-          />
-          <span v-else>{{ node.gender === 'male' ? 'Ông' : 'Bà' }}</span>
-
+        <div class="flex items-center gap-1.5 flex-none" @click.stop>
           <!-- Small alive/deceased status indicator dot -->
           <span
-            class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white"
-            :class="node.isAlive ? 'bg-emerald-500' : 'bg-amber-600'"
+            class="w-2 h-2 rounded-full inline-block"
+            :class="node.isAlive ? 'bg-kyn-success-primary' : 'bg-kyn-warning-primary'"
             :title="node.isAlive ? 'Còn sống' : 'Đã tạ thế'"
           ></span>
-        </div>
 
-        <!-- Name & Details -->
-        <div class="flex-1 min-w-0 text-left">
-          <div class="flex items-baseline gap-1">
-            <h4
-              class="font-bold text-[13.5px] leading-tight text-slate-800 truncate group-hover:text-amber-900 transition-colors"
-              :title="node.fullName"
+          <!-- Action menu button -->
+          <div class="relative">
+            <button
+              type="button"
+              class="w-5 h-5 rounded hover:text-kyn-text-title hover:bg-kyn-bg-secondary-1 flex items-center justify-center transition-colors text-xs cursor-pointer text-kyn-text-subtitle"
+              title="Thao tác"
+              @click="showMenu = !showMenu"
             >
-              {{ node.fullName }}
-            </h4>
-          </div>
+              ⋯
+            </button>
 
-          <div v-if="node.orderTitle" class="text-[11px] font-medium text-amber-800 mt-0.5">
-            {{ node.orderTitle }}
-          </div>
-
-          <!-- Lifespan years & Lunar death date -->
-          <div class="text-[11px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-1">
-            <span v-if="node.birthDate || node.deathDate">
-              {{ node.birthDate || '?' }} – {{ node.isAlive ? 'nay' : (node.deathDate || '?') }}
-            </span>
-            <span
-              v-if="!node.isAlive && node.deathDateLunar"
-              class="text-amber-700 bg-amber-50 px-1 rounded text-[10px] font-medium"
-              :title="'Ngày giỗ: ' + node.deathDateLunar + ' Âm lịch'"
+            <!-- Dropdown menu -->
+            <div
+              v-if="showMenu"
+              class="absolute right-0 top-6 w-40 bg-kyn-bg-primary rounded-lg shadow-xl border border-kyn-divider-dividers-2 py-1.5 z-50 text-xs text-kyn-text-primary text-left"
             >
-              Giỗ {{ node.deathDateLunar }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Action menu button -->
-        <div class="relative flex-none" @click.stop>
-          <button
-            type="button"
-            class="w-6 h-6 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors text-xs"
-            title="Thao tác"
-            @click="showMenu = !showMenu"
-          >
-            ⋯
-          </button>
-
-          <!-- Dropdown menu -->
-          <div
-            v-if="showMenu"
-            class="absolute right-0 top-7 w-40 bg-white rounded-lg shadow-xl border border-slate-200 py-1 z-50 text-xs text-slate-700"
-          >
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2"
-              @click="handleMenuAction('view')"
-            >
-              <span>👁</span> Xem chi tiết
-            </button>
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2"
-              @click="handleMenuAction('addChild')"
-            >
-              <span>➕</span> Thêm con
-            </button>
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2"
-              @click="handleMenuAction('addSpouse')"
-            >
-              <span>💍</span> Thêm phối ngẫu
-            </button>
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-amber-50 hover:text-amber-900 flex items-center gap-2"
-              @click="handleMenuAction('edit')"
-            >
-              <span>✏️</span> Sửa thông tin
-            </button>
-            <hr class="my-1 border-slate-100" />
-            <button
-              class="w-full text-left px-3 py-1.5 hover:bg-rose-50 text-rose-600 flex items-center gap-2"
-              @click="handleMenuAction('delete')"
-            >
-              <span>🗑️</span> Xóa thành viên
-            </button>
+              <button
+                class="w-full text-left px-3 py-1.5 hover:bg-kyn-bg-secondary-2 hover:text-kyn-text-title flex items-center gap-2 cursor-pointer transition-colors"
+                @click="handleMenuAction('view')"
+              >
+                <KynIcon name="eye" :size="14" />
+                <span>Xem chi tiết</span>
+              </button>
+              <button
+                class="w-full text-left px-3 py-1.5 hover:bg-kyn-bg-secondary-2 hover:text-kyn-text-title flex items-center gap-2 cursor-pointer transition-colors"
+                @click="handleMenuAction('addChild')"
+              >
+                <KynIcon name="plus" :size="14" />
+                <span>Thêm con</span>
+              </button>
+              <button
+                class="w-full text-left px-3 py-1.5 hover:bg-kyn-bg-secondary-2 hover:text-kyn-text-title flex items-center gap-2 cursor-pointer transition-colors"
+                @click="handleMenuAction('addSpouse')"
+              >
+                <KynIcon name="users" :size="14" />
+                <span>Thêm phối ngẫu</span>
+              </button>
+              <button
+                class="w-full text-left px-3 py-1.5 hover:bg-kyn-bg-secondary-2 hover:text-kyn-text-title flex items-center gap-2 cursor-pointer transition-colors"
+                @click="handleMenuAction('edit')"
+              >
+                <KynIcon name="pencil" :size="14" />
+                <span>Sửa thông tin</span>
+              </button>
+              <hr class="my-1 border-kyn-divider-dividers-1" />
+              <button
+                class="w-full text-left px-3 py-1.5 hover:bg-kyn-error-tag-bg text-kyn-error-primary flex items-center gap-2 cursor-pointer transition-colors"
+                @click="handleMenuAction('delete')"
+              >
+                <KynIcon name="trash-2" :size="14" />
+                <span>Xóa thành viên</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Spouses Row (Phối ngẫu / Vợ hoặc Chồng) -->
+      <!-- CAD TABLE: Tầng 1 (Hàng Chồng / Thành viên chính) -->
+      <div class="w-full px-3 py-2 bg-kyn-bg-primary text-center select-text" :class="{ 'rounded-b-[5px]': !node.spouses?.length }">
+        <div class="font-bold text-[13.5px] sm:text-[14.5px] tracking-wide text-kyn-text-title uppercase leading-snug">
+          {{ node.fullName }}<span v-if="memberMeta" class="font-normal italic text-[12px] sm:text-[12.5px] text-kyn-text-subtitle ml-1">({{ memberMeta }})</span>
+        </div>
+        <!-- Hiển thị mẹ đẻ nếu thành viên này sinh ra từ một bà vợ cụ thể của đời trước -->
+        <div v-if="node.motherName" class="text-[10px] text-kyn-text-subtitle mt-0.5 italic">
+          Mẹ: {{ node.motherName }}
+        </div>
+      </div>
+
+      <!-- CAD TABLE: Tầng 2 (Hàng Các Bà Vợ / Phối Ngẫu) -->
       <div
         v-if="node.spouses && node.spouses.length > 0"
-        class="w-full mt-2 pt-1.5 border-t border-slate-100 text-left"
+        class="w-full grid divide-x divide-kyn-divider-dividers-2 border-t border-kyn-divider-dividers-2 bg-kyn-bg-secondary-1/80 rounded-b-[5px]"
+        :style="{ gridTemplateColumns: `repeat(${node.spouses.length}, minmax(0, 1fr))` }"
       >
         <div
           v-for="sp in node.spouses"
           :key="sp.id"
-          class="flex items-center gap-1.5 text-[11px] text-slate-600 py-0.5"
+          class="px-2 py-1.5 text-center flex flex-col items-center justify-center min-w-0"
         >
-          <span class="text-slate-400">💍</span>
-          <span class="font-medium text-slate-700 truncate" :title="sp.fullName">
-            {{ sp.title ? sp.title + ':' : 'Vợ:' }} {{ sp.fullName }}
-          </span>
-          <span v-if="sp.birthYear || sp.deathYear" class="text-slate-400 text-[10px]">
-            ({{ sp.birthYear || '?' }}-{{ sp.isAlive ? 'nay' : (sp.deathYear || '?') }})
-          </span>
+          <!-- Badge danh hiệu thê thiếp (Chính thất, Kế thất, Trắc thất) -->
           <span
-            v-if="!sp.isAlive && sp.deathDateLunar"
-            class="text-amber-700 text-[9px] bg-amber-50 px-1 rounded ml-auto"
-            :title="'Ngày giỗ: ' + sp.deathDateLunar"
+            v-if="sp.title"
+            class="text-[9px] font-bold px-1.5 py-0.2 rounded mb-0.5 tracking-wider uppercase flex-none"
+            :class="getSpouseBadgeClass(sp.title)"
           >
-            {{ sp.deathDateLunar }}
+            {{ sp.title }}
           </span>
+
+          <!-- Tên người vợ in hoa đậm -->
+          <div class="font-bold text-[12px] sm:text-[13px] tracking-wide uppercase text-kyn-text-title truncate w-full" :title="sp.fullName">
+            {{ sp.fullName }}
+          </div>
+
+          <!-- Ngày mất / An táng trong ngoặc đơn in nghiêng -->
+          <div
+            v-if="formatSpouseMeta(sp)"
+            class="italic font-medium text-[10.5px] sm:text-[11.5px] text-kyn-text-subtitle mt-0.5 truncate w-full"
+            :title="formatSpouseMeta(sp)"
+          >
+            ({{ formatSpouseMeta(sp) }})
+          </div>
         </div>
       </div>
 
@@ -169,12 +153,13 @@
       <button
         v-if="hasChildren"
         class="oc-toggle"
+        :class="{ 'oc-toggle--collapsed': collapsed }"
         type="button"
         :title="collapsed ? 'Mở nhánh con' : 'Thu gọn nhánh con'"
-        @click.stop="ctx.onToggleCollapse(node.id)"
+        @click.stop="handleToggleCollapse"
       >
-        <span class="text-[10px]">{{ collapsed ? '▸' : '▾' }}</span>
-        <span class="text-[9px] font-medium ml-0.5 font-sans">{{ children.length }}</span>
+        <KynIcon :name="collapsed ? 'chevron-right' : 'chevron-down'" :size="11" />
+        <span class="text-[9px] font-semibold ml-0.5 tabular-nums">{{ children.length }}</span>
       </button>
     </div>
 
@@ -187,7 +172,8 @@
 
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue'
-import type { FamilyMember } from '../../types/family'
+import { KynIcon } from '@kyn/vue-components'
+import type { FamilyMember, SpouseInfo } from '../../types/family'
 import { FAMILY_CHART_CTX, type FamilyChartCtx } from './chartCtx'
 import { getGenerationStyle } from '../../data/generationStyles'
 
@@ -207,6 +193,93 @@ const genStyle = computed(() => getGenerationStyle(props.node.generation))
 
 const showMenu = ref(false)
 
+// Chiều rộng thẻ node tự động co giãn theo số lượng vợ chuẩn đồ họa CAD
+const boxWidth = computed(() => {
+  const count = props.node.spouses?.length || 0
+  if (count <= 1) return 260
+  if (count === 2) return 360
+  if (count === 3) return 480
+  return Math.max(480, count * 155)
+})
+
+// Chuỗi thông tin của thành viên chính theo chuẩn CAD gia phả:
+// Ví dụ: "02-04-73 Mảnh Nội" hoặc "1890-1973 Mảnh Nội" hoặc "sn 1985 Hà Nội"
+const memberMeta = computed(() => {
+  const n = props.node
+  const parts: string[] = []
+
+  if (!n.isAlive) {
+    let dateStr = ''
+    if (n.deathDateLunar) {
+      // Đổi 02/04 thành 02-04
+      const lunar = n.deathDateLunar.replace(/\s*Âm\s*lịch/i, '').trim().replace(/\//g, '-')
+      dateStr = lunar
+      if (n.deathDate) {
+        const yr = String(n.deathDate).trim()
+        const shortYr = yr.length === 4 ? yr.slice(-2) : yr
+        dateStr += `-${shortYr}`
+      }
+    } else if (n.birthDate || n.deathDate) {
+      dateStr = `${n.birthDate || '?'}-${n.deathDate || '?'}`
+    }
+
+    if (dateStr) parts.push(dateStr)
+
+    if (n.burialPlace) {
+      // Lấy tên khu mộ / địa điểm gọn gàng
+      const place = n.burialPlace.split(',')[0].trim()
+      parts.push(place)
+    }
+  } else {
+    if (n.birthDate) parts.push(`sn ${n.birthDate}`)
+    if (n.address) {
+      const addr = n.address.split(',')[0].trim()
+      parts.push(addr)
+    }
+  }
+
+  return parts.join(' ')
+})
+
+// Chuỗi thông tin của người vợ theo chuẩn CAD gia phả:
+// Ví dụ: "28-03 Đống Do", "16-11 Đống Do", "16-10 Đống Do"
+function formatSpouseMeta(sp: SpouseInfo): string {
+  const parts: string[] = []
+
+  if (!sp.isAlive) {
+    let dateStr = ''
+    if (sp.deathDateLunar) {
+      const lunar = sp.deathDateLunar.replace(/\s*Âm\s*lịch/i, '').trim().replace(/\//g, '-')
+      dateStr = lunar
+      if (sp.deathYear) {
+        const yr = String(sp.deathYear).trim()
+        const shortYr = yr.length === 4 ? yr.slice(-2) : yr
+        dateStr += `-${shortYr}`
+      }
+    } else if (sp.birthYear || sp.deathYear) {
+      dateStr = `${sp.birthYear || '?'}-${sp.deathYear || '?'}`
+    }
+
+    if (dateStr) parts.push(dateStr)
+
+    if (sp.burialPlace) {
+      const place = sp.burialPlace.split(',')[0].trim()
+      parts.push(place)
+    } else if (sp.origin) {
+      const orig = sp.origin.split(',')[0].trim()
+      parts.push(orig)
+    }
+  } else {
+    if (sp.birthYear) parts.push(`sn ${sp.birthYear}`)
+    if (sp.origin) {
+      const orig = sp.origin.split(',')[0].trim()
+      parts.push(orig)
+    }
+  }
+
+  return parts.join(' ')
+}
+
 function handleMenuAction(action: 'view' | 'addChild' | 'addSpouse' | 'edit' | 'delete') {
   showMenu.value = false
   if (action === 'view') ctx.onViewDetail(props.node)
@@ -215,14 +288,34 @@ function handleMenuAction(action: 'view' | 'addChild' | 'addSpouse' | 'edit' | '
   else if (action === 'edit') ctx.onEdit(props.node)
   else if (action === 'delete') ctx.onDelete(props.node)
 }
+
+function handleToggleCollapse() {
+  ctx.onToggleCollapse(props.node.id)
+  ctx.onSelect(props.node)
+}
+
+function getSpouseBadgeClass(title?: string) {
+  if (!title) return 'bg-kyn-bg-secondary-2 text-kyn-text-secondary border border-kyn-divider-dividers-2'
+  const t = title.toLowerCase()
+  if (t.includes('chính thất') || t.includes('nguyên phối') || t.includes('bà cả')) {
+    return 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+  }
+  if (t.includes('kế thất') || t.includes('bà kế')) {
+    return 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30'
+  }
+  if (t.includes('trắc thất') || t.includes('thứ thất') || t.includes('bà hai') || t.includes('bà ba') || t.includes('vợ lẽ') || t.includes('á thất')) {
+    return 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30'
+  }
+  return 'bg-kyn-bg-secondary-2 text-kyn-text-secondary border border-kyn-divider-dividers-2'
+}
 </script>
 
 <style>
-/* Cây phả hệ CSS kế thừa và nâng tầm từ KynOrgChart */
+/* Cây phả hệ CSS kế thừa từ KynOrgChart với token động theo Theme */
 .family-orgchart {
-  --kyn-org-connector: #94a3b8;
-  --kyn-org-border: #e2e8f0;
-  --kyn-org-accent: #b45309;
+  --kyn-org-connector: var(--color-kyn-neutral-6, #8c8c8c);
+  --kyn-org-border: var(--color-kyn-card-border, #e7e7e4);
+  --kyn-org-accent: var(--color-kyn-primary, #f9c216);
 }
 
 .family-orgchart,
@@ -320,18 +413,18 @@ function handleMenuAction(action: 'view' | 'addChild' | 'addSpouse' | 'edit' | '
   padding-top: 0;
 }
 
-/* Thẻ thành viên Gia Phả */
+/* Thẻ thành viên Gia Phả chuẩn CAD */
 .family-orgchart .oc-box {
   display: inline-flex;
   flex-direction: column;
-  align-items: flex-start;
-  width: 220px;
-  min-height: 98px;
-  padding: 10px 12px 14px;
-  border-radius: 12px;
+  align-items: stretch;
+  min-height: 72px;
+  padding: 0;
+  border-radius: 6px;
   border: 1.5px solid var(--kyn-org-border);
-  background: #ffffff;
-  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.06), 0 1px 3px -1px rgba(0, 0, 0, 0.04);
+  background: var(--color-kyn-bg-primary);
+  color: var(--color-kyn-text-title);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
@@ -339,26 +432,40 @@ function handleMenuAction(action: 'view' | 'addChild' | 'addSpouse' | 'edit' | '
 }
 
 .family-orgchart .oc-box:hover {
-  border-color: var(--node-accent, #b45309);
-  box-shadow: 0 8px 16px -2px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  border-color: var(--node-accent, var(--kyn-org-accent));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
   transform: translateY(-2px);
 }
 
 .family-orgchart .oc-box--path {
-  border-color: #f59e0b;
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+  border-color: var(--kyn-org-accent);
+  box-shadow: 0 0 0 2px rgba(249, 194, 22, 0.35);
 }
 
 .family-orgchart .oc-box--selected {
-  border-color: #b45309 !important;
+  border-color: var(--kyn-org-accent) !important;
   border-width: 2px;
-  background: #fffbeb;
-  box-shadow: 0 0 0 3px rgba(180, 83, 9, 0.3), 0 10px 20px -3px rgba(180, 83, 9, 0.15) !important;
+  box-shadow: 0 0 0 3px rgba(249, 194, 22, 0.4), 0 8px 18px -2px rgba(0, 0, 0, 0.2) !important;
   transform: translateY(-2px);
 }
 
 .family-orgchart .oc-box--deceased {
-  background: #fdfdfd;
+  opacity: 0.95;
+}
+
+/* Mũi tên CAD chỉ từ nhánh trên xuống đỉnh giữa hộp */
+.family-orgchart .oc-box-arrow {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--kyn-org-connector);
+  z-index: 4;
+  pointer-events: none;
 }
 
 /* Nút thu gọn / mở nhánh đè lên đầu đường nối */
@@ -374,17 +481,25 @@ function handleMenuAction(action: 'view' | 'addChild' | 'addSpouse' | 'edit' | '
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
-  background: #ffffff;
+  color: var(--color-kyn-text-secondary);
+  background: var(--color-kyn-bg-primary);
   border: 1.5px solid var(--kyn-org-connector);
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   transition: all 0.15s ease;
 }
 
 .family-orgchart .oc-toggle:hover {
-  border-color: #b45309;
-  color: #b45309;
-  background: #fffbeb;
+  border-color: var(--kyn-org-accent);
+  color: var(--kyn-org-accent);
+  background: var(--color-kyn-primary-tag-bg);
+}
+
+.family-orgchart .oc-toggle--collapsed {
+  border-color: var(--kyn-org-accent);
+  background: var(--color-kyn-primary-tag-bg);
+  color: var(--color-kyn-text-title);
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(249, 194, 22, 0.3);
 }
 </style>

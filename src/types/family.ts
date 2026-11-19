@@ -33,6 +33,8 @@ export interface FamilyMember {
   bio?: string // Tiểu sử, hành trạng, công trạng
   spouses?: SpouseInfo[]
   parentId?: string | null
+  motherId?: string | null // ID của người mẹ (thuộc spouses của người cha)
+  motherName?: string // Tên / Danh vị người mẹ (Ví dụ: "Lê Thị Từ Tâm (Chính thất)")
   children?: FamilyMember[]
 }
 
