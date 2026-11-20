@@ -5,7 +5,7 @@
     icon="alert-triangle"
     tone="error"
     size="md"
-    z-class="z-[60]"
+    z-class="z-[70]"
     :close-on-backdrop="false"
     @update:model-value="(val) => !val && $emit('close')"
   >

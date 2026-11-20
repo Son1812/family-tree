@@ -142,6 +142,14 @@
                 <button
                   type="button"
                   class="w-full text-left px-3.5 py-2 hover:bg-kyn-bg-secondary-2 text-kyn-text-title flex items-center gap-2 cursor-pointer transition-colors"
+                  @click="handleReloadFromProjectFile"
+                >
+                  <KynIcon name="refresh-cw" :size="14" class="text-sky-600 dark:text-sky-400" />
+                  <span>Đọc lại từ file JSON (family-tree.json)</span>
+                </button>
+                <button
+                  type="button"
+                  class="w-full text-left px-3.5 py-2 hover:bg-kyn-bg-secondary-2 text-kyn-text-title flex items-center gap-2 cursor-pointer transition-colors"
                   @click="handleQuickSave(true)"
                 >
                   <KynIcon name="file-text" :size="14" class="text-kyn-icon-secondary" />
@@ -251,6 +259,7 @@
       @edit="openEditMember"
       @add-child="openAddMember"
       @add-spouse="openAddSpouse"
+      @edit-spouse="openEditSpouse"
       @remove-spouse="handleRemoveSpouse"
       @focus-member="locateOnTree"
       @delete="confirmDelete"
@@ -265,11 +274,12 @@
       @save="handleSaveMember"
     />
 
-    <!-- Modal Thêm Phối Ngẫu -->
+    <!-- Modal Thêm / Sửa Phối Ngẫu (Vợ / Chồng) -->
     <SpouseModal
       :is-open="isSpouseOpen"
       :target-member="spouseTargetMember"
-      @close="isSpouseOpen = false"
+      :spouse-to-edit="spouseToEdit"
+      @close="closeSpouseModal"
       @save="handleSaveSpouse"
     />
 
@@ -280,6 +290,9 @@
       @close="isConfirmDeleteOpen = false"
       @confirm="handleExecuteDelete"
     />
+
+    <!-- Pop-up Modal dùng chung thay thế toàn bộ alert / confirm -->
+    <AppPopupModal />
 
     <!-- Toast thông báo lưu file góc dưới-phải -->
     <transition
@@ -322,6 +335,8 @@ import MemberDetailModal from './components/modals/MemberDetailModal.vue'
 import MemberFormModal from './components/modals/MemberFormModal.vue'
 import SpouseModal from './components/modals/SpouseModal.vue'
 import ConfirmDeleteModal from './components/modals/ConfirmDeleteModal.vue'
+import AppPopupModal from './components/modals/AppPopupModal.vue'
+import { usePopup } from './composables/usePopup'
 
 const currentTab = ref('chart')
 const showDataMenu = ref(false)
@@ -348,6 +363,7 @@ const {
   updateMember,
   deleteMember,
   addSpouse,
+  updateSpouse,
   removeSpouse,
   resetToDefault,
   loadFromFamilyTreeFile,
@@ -366,6 +382,8 @@ const {
   saveToProjectFile,
   markDirty,
 } = useClientFileStorage(tree, importJSON)
+
+const { showAlert, showConfirm } = usePopup()
 
 // Lắng nghe thay đổi cây để đánh dấu dirty
 watch(
@@ -430,6 +448,18 @@ function handleGlobalKeydown(e: KeyboardEvent) {
 }
 
 onMounted(async () => {
+  // Thay thế toàn bộ alert mặc định của trình duyệt bằng Pop-up modal chuẩn KYN
+  if (typeof window !== 'undefined') {
+    window.alert = (msg?: any) => {
+      showAlert({
+        title: 'Thông báo',
+        message: String(msg ?? ''),
+        tone: 'info',
+        confirmText: 'Đóng',
+      })
+    }
+  }
+
   window.addEventListener('keydown', handleGlobalKeydown)
   // Tự động nạp dữ liệu chuẩn từ file family-tree.json khi khởi động
   await loadFromFamilyTreeFile()
@@ -502,6 +532,7 @@ const parentMember = ref<FamilyMember | null>(null)
 
 const isSpouseOpen = ref(false)
 const spouseTargetMember = ref<FamilyMember | null>(null)
+const spouseToEdit = ref<SpouseInfo | null>(null)
 
 const isConfirmDeleteOpen = ref(false)
 const memberToDelete = ref<FamilyMember | null>(null)
@@ -526,7 +557,19 @@ function openEditMember(member: FamilyMember) {
 
 function openAddSpouse(member: FamilyMember) {
   spouseTargetMember.value = member
+  spouseToEdit.value = null
   isSpouseOpen.value = true
+}
+
+function openEditSpouse(member: FamilyMember, spouse: SpouseInfo) {
+  spouseTargetMember.value = member
+  spouseToEdit.value = spouse
+  isSpouseOpen.value = true
+}
+
+function closeSpouseModal() {
+  isSpouseOpen.value = false
+  spouseToEdit.value = null
 }
 
 function handleSaveMember(data: Partial<FamilyMember>, parentId?: string | null) {
@@ -537,19 +580,41 @@ function handleSaveMember(data: Partial<FamilyMember>, parentId?: string | null)
   }
 }
 
-function handleSaveSpouse(memberId: string, spouse: Omit<SpouseInfo, 'id'>) {
-  addSpouse(memberId, spouse)
+function handleSaveSpouse(memberId: string, spouse: Omit<SpouseInfo, 'id'>, spouseId?: string) {
+  if (spouseId) {
+    updateSpouse(memberId, spouseId, spouse)
+    showToast(`✓ Đã cập nhật thông tin "${spouse.fullName}". Nhấn "Lưu vào JSON" để cập nhật tệp.`)
+  } else {
+    addSpouse(memberId, spouse)
+    showToast(`✓ Đã thêm phối ngẫu "${spouse.fullName}". Nhấn "Lưu vào JSON" để cập nhật tệp.`)
+  }
+  markDirty()
   if (viewingMember.value && viewingMember.value.id === memberId) {
     viewingMember.value = memberById.value.get(memberId) ?? null
   }
 }
 
-function handleRemoveSpouse(memberId: string, spouseId: string) {
-  if (confirm('Bạn có chắc muốn xóa thông tin người phối ngẫu này?')) {
+async function handleRemoveSpouse(memberId: string, spouseId: string) {
+  const member = memberById.value.get(memberId)
+  const spouse = member?.spouses?.find((s) => s.id === spouseId)
+  const spouseName = spouse?.fullName ? ` "${spouse.fullName}"` : ''
+
+  const ok = await showConfirm({
+    title: 'Xác nhận xóa phối ngẫu',
+    message: `Bạn có chắc chắn muốn xóa thông tin người phối ngẫu${spouseName} khỏi hồ sơ không?\nThao tác này sẽ cập nhật ngay vào cây gia phả.`,
+    tone: 'error',
+    confirmVariant: 'danger',
+    confirmText: 'Xóa phối ngẫu',
+    cancelText: 'Hủy bỏ',
+  })
+
+  if (ok) {
     removeSpouse(memberId, spouseId)
     if (viewingMember.value) {
       viewingMember.value = memberById.value.get(memberId) ?? null
     }
+    markDirty()
+    showToast(`✓ Đã xóa người phối ngẫu${spouseName}. Nhấn "Lưu vào JSON" để cập nhật tệp.`)
   }
 }
 
@@ -589,28 +654,43 @@ function handleImportFile(event: Event) {
   if (!input.files || input.files.length === 0) return
   const file = input.files[0]
   const reader = new FileReader()
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     const text = e.target?.result as string
     if (text) {
       const ok = importJSON(text)
       if (ok) {
-        alert('Đã nhập dữ liệu gia phả thành công!')
+        await showAlert({
+          title: 'Nhập dữ liệu thành công',
+          message: `Đã nạp toàn bộ dữ liệu từ tệp "${file.name}" vào cây gia phả thành công.\nBạn có thể nhấn "Lưu vào JSON" (Ctrl + S) để ghi đè cập nhật vào file dự án.`,
+          tone: 'success',
+          confirmText: 'Đã hiểu',
+        })
       } else {
-        alert('File JSON không đúng định dạng gia phả.')
+        await showAlert({
+          title: 'Định dạng file không hợp lệ',
+          message: 'Tệp JSON đã chọn không đúng cấu trúc cây phả hệ (yêu cầu là mảng danh sách thành viên hợp lệ).\nVui lòng kiểm tra lại nội dung file.',
+          tone: 'error',
+          confirmText: 'Đóng',
+        })
       }
     }
   }
   reader.readAsText(file)
 }
 
-function handleResetDefault() {
+async function handleResetDefault() {
   showDataMenu.value = false
-  if (
-    confirm(
-      'Khôi phục dữ liệu mẫu ban đầu? Toàn bộ các chỉnh sửa đã lưu trên trình duyệt sẽ được đặt lại.',
-    )
-  ) {
+  const ok = await showConfirm({
+    title: 'Khôi phục dữ liệu mẫu ban đầu',
+    message: 'Toàn bộ các chỉnh sửa cục bộ đã lưu trên trình duyệt sẽ được khôi phục về dữ liệu gốc từ file family-tree.json.\nBạn có chắc chắn muốn tiếp tục không?',
+    tone: 'warning',
+    confirmVariant: 'danger',
+    confirmText: 'Khôi phục dữ liệu',
+    cancelText: 'Hủy bỏ',
+  })
+  if (ok) {
     resetToDefault()
+    showToast('✓ Đã khôi phục dữ liệu phả hệ ban đầu.')
   }
 }
 </script>

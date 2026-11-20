@@ -194,6 +194,33 @@ export function useFamilyTree() {
     target.spouses.push(newSpouse)
   }
 
+  // Cập nhật thông tin người phối ngẫu (Vợ / Chồng)
+  function updateSpouse(memberId: string, spouseId: string, data: Partial<SpouseInfo>) {
+    const target = memberById.value.get(memberId)
+    if (!target || !target.spouses) return
+    const idx = target.spouses.findIndex((s) => s.id === spouseId)
+    if (idx !== -1) {
+      target.spouses[idx] = {
+        ...target.spouses[idx],
+        ...data,
+      }
+
+      // Tự động đồng bộ motherName cho các con do bà này sinh hạ nếu đổi tên hoặc danh vị
+      if (target.children && (data.fullName || data.title)) {
+        const updated = target.spouses[idx]
+        const motherLabel = updated.title
+          ? `${updated.fullName} (${updated.title})`
+          : updated.fullName
+
+        for (const child of target.children) {
+          if (child.motherId === spouseId) {
+            child.motherName = motherLabel
+          }
+        }
+      }
+    }
+  }
+
   function removeSpouse(memberId: string, spouseId: string) {
     const target = memberById.value.get(memberId)
     if (!target || !target.spouses) return
@@ -352,6 +379,7 @@ export function useFamilyTree() {
     updateMember,
     deleteMember,
     addSpouse,
+    updateSpouse,
     removeSpouse,
     resetToDefault,
     loadFromFamilyTreeFile,

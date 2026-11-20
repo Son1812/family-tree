@@ -297,14 +297,17 @@ function handleToggleCollapse() {
 function getSpouseBadgeClass(title?: string) {
   if (!title) return 'bg-kyn-bg-secondary-2 text-kyn-text-secondary border border-kyn-divider-dividers-2'
   const t = title.toLowerCase()
-  if (t.includes('chính thất') || t.includes('nguyên phối') || t.includes('bà cả')) {
-    return 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+  if (t.includes('bà cả') || t.includes('chính thất') || t.includes('nguyên phối')) {
+    return 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-bold'
   }
-  if (t.includes('kế thất') || t.includes('bà kế')) {
-    return 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30'
+  if (t.includes('bà hai') || t.includes('kế thất') || t.includes('bà kế')) {
+    return 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 font-bold'
   }
-  if (t.includes('trắc thất') || t.includes('thứ thất') || t.includes('bà hai') || t.includes('bà ba') || t.includes('vợ lẽ') || t.includes('á thất')) {
-    return 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30'
+  if (t.includes('bà ba') || t.includes('trắc thất')) {
+    return 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-bold'
+  }
+  if (t.includes('bà tư') || t.includes('bà năm') || t.includes('thứ thất') || t.includes('vợ lẽ') || t.includes('á thất')) {
+    return 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold'
   }
   return 'bg-kyn-bg-secondary-2 text-kyn-text-secondary border border-kyn-divider-dividers-2'
 }

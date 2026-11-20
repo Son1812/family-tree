@@ -152,14 +152,27 @@
                 </div>
               </div>
 
-              <button
-                type="button"
-                class="text-xs text-kyn-error-primary hover:underline flex-none cursor-pointer"
-                title="Xóa phối ngẫu"
-                @click="$emit('removeSpouse', member.id, sp.id)"
-              >
-                Xóa
-              </button>
+              <div class="flex items-center gap-2 flex-none">
+                <button
+                  type="button"
+                  class="text-xs text-kyn-primary hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                  title="Sửa thông tin phối ngẫu"
+                  @click="$emit('editSpouse', member, sp)"
+                >
+                  <KynIcon name="pencil" :size="12" />
+                  <span>Sửa</span>
+                </button>
+                <span class="text-kyn-divider-dividers-2">|</span>
+                <button
+                  type="button"
+                  class="text-xs text-kyn-error-primary hover:underline flex items-center gap-1 cursor-pointer"
+                  title="Xóa phối ngẫu"
+                  @click="$emit('removeSpouse', member.id, sp.id)"
+                >
+                  <KynIcon name="trash-2" :size="12" />
+                  <span>Xóa</span>
+                </button>
+              </div>
             </div>
 
             <!-- Các con do bà này sinh hạ -->
@@ -260,7 +273,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { AppModal, AppButton, AppBadge, KynIcon } from '@kyn/vue-components'
-import type { FamilyMember } from '../../types/family'
+import type { FamilyMember, SpouseInfo } from '../../types/family'
 import { getGenerationStyle } from '../../data/generationStyles'
 import { useFamilyTree } from '../../composables/useFamilyTree'
 
@@ -273,6 +286,7 @@ defineEmits<{
   edit: [member: FamilyMember]
   addChild: [parent: FamilyMember]
   addSpouse: [member: FamilyMember]
+  editSpouse: [member: FamilyMember, spouse: SpouseInfo]
   removeSpouse: [memberId: string, spouseId: string]
   focusMember: [memberId: string]
   delete: [member: FamilyMember]
@@ -293,13 +307,16 @@ function childrenByMother(spouseId: string): FamilyMember[] {
 function getSpouseBadgeClass(title?: string) {
   if (!title) return 'bg-kyn-bg-secondary-2 text-kyn-text-secondary border border-kyn-divider-dividers-2'
   const t = title.toLowerCase()
-  if (t.includes('chính thất') || t.includes('nguyên phối') || t.includes('bà cả')) {
+  if (t.includes('bà cả') || t.includes('chính thất') || t.includes('nguyên phối')) {
     return 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 font-bold'
   }
-  if (t.includes('kế thất') || t.includes('bà kế')) {
+  if (t.includes('bà hai') || t.includes('kế thất') || t.includes('bà kế')) {
     return 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 font-bold'
   }
-  if (t.includes('trắc thất') || t.includes('thứ thất') || t.includes('bà hai') || t.includes('bà ba') || t.includes('vợ lẽ') || t.includes('á thất')) {
+  if (t.includes('bà ba') || t.includes('trắc thất')) {
+    return 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 font-bold'
+  }
+  if (t.includes('bà tư') || t.includes('bà năm') || t.includes('thứ thất') || t.includes('vợ lẽ') || t.includes('á thất')) {
     return 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold'
   }
   return 'bg-kyn-bg-secondary-2 text-kyn-text-secondary border border-kyn-divider-dividers-2 font-medium'
