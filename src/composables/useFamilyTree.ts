@@ -4,7 +4,7 @@ import { INITIAL_FAMILY_TREE } from '../data/mockFamily'
 import { buildAncestorChain } from '../components/chart/geometry'
 import { getTodayLunar } from '../utils/lunar'
 
-const STORAGE_KEY = 'family_tree_data_v4'
+const STORAGE_KEY = 'family_tree_data_v6'
 
 function loadFromStorage(): FamilyMember[] {
   try {
@@ -118,7 +118,12 @@ export function useFamilyTree() {
     const nextCollapsed = new Set(collapsedIds.value)
     for (const ancId of ancestors) {
       nextCollapsed.delete(ancId)
+      const anc = index.value.byId.get(ancId)
+      if (anc?.motherId) nextCollapsed.delete(anc.motherId)
     }
+    const target = index.value.byId.get(id)
+    if (target?.motherId) nextCollapsed.delete(target.motherId)
+
     collapsedIds.value = nextCollapsed
     selectedMemberId.value = id
   }

@@ -1,11 +1,14 @@
 <template>
-  <li class="oc-li">
+  <li class="oc-li" :class="{ 'oc-li--menu-open': showMenu }">
     <div
       class="oc-box group"
       :class="{
         'oc-box--selected': isSelected,
         'oc-box--path': onPath && !isSelected,
         'oc-box--deceased': !node.isAlive,
+        'oc-box--menu-open': showMenu,
+        'oc-box--with-spouse': !!node.spouses?.length,
+        'oc-box--single': !node.spouses?.length,
       }"
       :data-node-id="node.id"
       :style="{
@@ -24,34 +27,35 @@
       ></div>
 
       <!-- Header row: Generation badge & Order title & Alive dot & Action menu -->
-      <div class="flex items-center justify-between gap-1 w-full text-[11px] font-medium px-2.5 py-1 bg-kyn-bg-secondary-2/80 border-b border-kyn-divider-dividers-2 rounded-t-[5px] select-none">
-        <div class="flex items-center gap-1.5 min-w-0">
+      <div class="flex items-center justify-between gap-1 w-full text-[10.5px] font-medium px-2 py-0.5 bg-kyn-bg-secondary-2/80 border-b border-kyn-divider-dividers-2 rounded-t-[5px] select-none flex-none h-[22px]">
+        <div class="flex items-center gap-1 min-w-0">
           <span
-            class="px-1.5 py-0.2 rounded text-[10px] font-bold tracking-wide flex-none"
+            class="px-1.5 py-0.2 rounded text-[9.5px] font-bold tracking-wide flex-none"
             :style="{ background: genStyle.bgColor, color: genStyle.color }"
           >
             {{ genStyle.roman }}
           </span>
-          <span v-if="node.orderTitle" class="text-amber-600 dark:text-amber-400 text-[10.5px] font-medium truncate">
+          <span v-if="node.orderTitle" class="text-amber-600 dark:text-amber-400 text-[10px] font-medium truncate">
             {{ node.orderTitle }}
           </span>
         </div>
 
-        <div class="flex items-center gap-1.5 flex-none" @click.stop>
+        <div class="flex items-center gap-1 flex-none" @click.stop>
           <!-- Small alive/deceased status indicator dot -->
           <span
-            class="w-2 h-2 rounded-full inline-block"
+            class="w-1.5 h-1.5 rounded-full inline-block"
             :class="node.isAlive ? 'bg-kyn-success-primary' : 'bg-kyn-warning-primary'"
             :title="node.isAlive ? 'Còn sống' : 'Đã tạ thế'"
           ></span>
 
           <!-- Action menu button -->
-          <div class="relative">
+          <div ref="menuRef" class="relative">
             <button
               type="button"
-              class="w-5 h-5 rounded hover:text-kyn-text-title hover:bg-kyn-bg-secondary-1 flex items-center justify-center transition-colors text-xs cursor-pointer text-kyn-text-subtitle"
+              class="w-4 h-4 rounded hover:text-kyn-text-title hover:bg-kyn-bg-secondary-1 flex items-center justify-center transition-colors text-[10px] cursor-pointer text-kyn-text-subtitle"
+              :class="{ 'bg-kyn-bg-secondary-2 text-kyn-text-title font-bold': showMenu }"
               title="Thao tác"
-              @click="showMenu = !showMenu"
+              @click.stop="toggleMenu"
             >
               ⋯
             </button>
@@ -59,7 +63,8 @@
             <!-- Dropdown menu -->
             <div
               v-if="showMenu"
-              class="absolute right-0 top-6 w-40 bg-kyn-bg-primary rounded-lg shadow-xl border border-kyn-divider-dividers-2 py-1.5 z-50 text-xs text-kyn-text-primary text-left"
+              class="absolute right-0 top-5 w-44 bg-kyn-bg-primary rounded-lg shadow-2xl border border-kyn-divider-dividers-2 py-1.5 z-[120] text-xs text-kyn-text-primary text-left"
+              @click.stop
             >
               <button
                 class="w-full text-left px-3 py-1.5 hover:bg-kyn-bg-secondary-2 hover:text-kyn-text-title flex items-center gap-2 cursor-pointer transition-colors"
@@ -103,48 +108,104 @@
       </div>
 
       <!-- CAD TABLE: Tầng 1 (Hàng Chồng / Thành viên chính) -->
-      <div class="w-full px-3 py-2 bg-kyn-bg-primary text-center select-text" :class="{ 'rounded-b-[5px]': !node.spouses?.length }">
-        <div class="font-bold text-[13.5px] sm:text-[14.5px] tracking-wide text-kyn-text-title uppercase leading-snug">
-          {{ node.fullName }}<span v-if="memberMeta" class="font-normal italic text-[12px] sm:text-[12.5px] text-kyn-text-subtitle ml-1">({{ memberMeta }})</span>
+      <div
+        class="w-full flex flex-col justify-center items-center px-2 py-0.5 bg-kyn-bg-primary text-center select-text overflow-hidden"
+        :class="[
+          !node.spouses?.length ? 'rounded-b-[5px] flex-1' : 'h-[26px] flex-none border-b border-kyn-divider-dividers-2'
+        ]"
+      >
+        <div class="font-bold text-[11.5px] sm:text-[12px] tracking-wide text-kyn-text-title uppercase leading-tight truncate w-full">
+          {{ node.fullName }}<span v-if="memberMeta" class="font-normal italic text-[9.5px] text-kyn-text-subtitle ml-1">({{ memberMeta }})</span>
         </div>
         <!-- Hiển thị mẹ đẻ nếu thành viên này sinh ra từ một bà vợ cụ thể của đời trước -->
-        <div v-if="node.motherName" class="text-[10px] text-kyn-text-subtitle mt-0.5 italic">
+        <div v-if="node.motherName && !node.spouses?.length" class="text-[9.5px] text-kyn-text-subtitle mt-0.5 italic truncate max-w-full">
           Mẹ: {{ node.motherName }}
         </div>
       </div>
 
-      <!-- CAD TABLE: Tầng 2 (Hàng Các Bà Vợ / Phối Ngẫu) -->
+      <!-- CAD TABLE: Tầng 2 (Hàng Phối Ngẫu - Các bà vợ hiển thị gộp theo card của chồng) -->
       <div
         v-if="node.spouses && node.spouses.length > 0"
-        class="w-full grid divide-x divide-kyn-divider-dividers-2 border-t border-kyn-divider-dividers-2 bg-kyn-bg-secondary-1/80 rounded-b-[5px]"
-        :style="{ gridTemplateColumns: `repeat(${node.spouses.length}, minmax(0, 1fr))` }"
+        class="w-full flex-1 min-h-0 bg-kyn-bg-secondary-1/80 rounded-b-[5px] overflow-hidden flex flex-col justify-center"
       >
+        <!-- TH 1 Vợ: Hiển thị gọn gàng trên 2 dòng, đầy đủ danh hiệu, họ tên, ngày giỗ âm, nơi an táng -->
         <div
-          v-for="sp in node.spouses"
-          :key="sp.id"
-          class="px-2 py-1.5 text-center flex flex-col items-center justify-center min-w-0"
+          v-if="node.spouses.length === 1"
+          class="px-2 py-1 text-center flex flex-col items-center justify-center min-w-0 h-full overflow-hidden w-full cursor-pointer hover:bg-kyn-bg-secondary-2/50 transition-colors"
+          :title="getSpouseTooltip(node.spouses[0])"
         >
-          <!-- Badge danh hiệu thê thiếp (Chính thất, Kế thất, Trắc thất) -->
-          <span
-            v-if="sp.title"
-            class="text-[9px] font-bold px-1.5 py-0.2 rounded mb-0.5 tracking-wider uppercase flex-none"
-            :class="getSpouseBadgeClass(sp.title)"
-          >
-            {{ sp.title }}
-          </span>
-
-          <!-- Tên người vợ in hoa đậm -->
-          <div class="font-bold text-[12px] sm:text-[13px] tracking-wide uppercase text-kyn-text-title truncate w-full" :title="sp.fullName">
-            {{ sp.fullName }}
+          <div class="flex items-center justify-center gap-1.5 w-full min-w-0 leading-tight">
+            <span
+              class="w-1.5 h-1.5 rounded-full inline-block flex-none"
+              :class="node.spouses[0].isAlive ? 'bg-kyn-success-primary' : 'bg-kyn-warning-primary'"
+              :title="node.spouses[0].isAlive ? 'Còn sống' : 'Đã tạ thế'"
+            ></span>
+            <span
+              v-if="node.spouses[0].title && node.spouses[0].title !== 'Vợ'"
+              class="text-[8.5px] font-bold px-1.5 py-0.2 rounded uppercase flex-none tracking-wider"
+              :class="getSpouseBadgeClass(node.spouses[0].title)"
+            >
+              {{ node.spouses[0].title }}
+            </span>
+            <span
+              v-else
+              class="text-[9px] font-bold text-amber-700 dark:text-amber-400 uppercase flex-none"
+            >
+              Vợ:
+            </span>
+            <span class="font-bold text-[11px] sm:text-[11.5px] tracking-wide uppercase text-kyn-text-title truncate">
+              {{ node.spouses[0].fullName }}
+            </span>
           </div>
 
-          <!-- Ngày mất / An táng trong ngoặc đơn in nghiêng -->
           <div
-            v-if="formatSpouseMeta(sp)"
-            class="italic font-medium text-[10.5px] sm:text-[11.5px] text-kyn-text-subtitle mt-0.5 truncate w-full"
-            :title="formatSpouseMeta(sp)"
+            v-if="formatSpouseMeta(node.spouses[0])"
+            class="italic font-medium text-[9px] sm:text-[9.5px] text-kyn-text-subtitle truncate w-full mt-0.5 leading-tight"
           >
-            ({{ formatSpouseMeta(sp) }})
+            ({{ formatSpouseMeta(node.spouses[0]) }})
+          </div>
+        </div>
+
+        <!-- TH Nhiều Vợ (> 1): Chia cột song song cho từng bà vợ, mỗi cột đầy đủ 3 dòng -->
+        <div
+          v-else
+          class="w-full h-full grid divide-x divide-kyn-divider-dividers-2"
+          :style="{ gridTemplateColumns: `repeat(${node.spouses.length}, minmax(0, 1fr))` }"
+        >
+          <div
+            v-for="sp in node.spouses"
+            :key="sp.id"
+            class="px-1.5 py-1 text-center flex flex-col items-center justify-center min-w-0 h-full overflow-hidden hover:bg-kyn-bg-secondary-2/50 transition-colors"
+            :title="getSpouseTooltip(sp)"
+          >
+            <!-- Hàng 1: Alive dot + Badge danh hiệu -->
+            <div class="flex items-center justify-center gap-1 mb-0.5 flex-none leading-none">
+              <span
+                class="w-1.5 h-1.5 rounded-full inline-block flex-none"
+                :class="sp.isAlive ? 'bg-kyn-success-primary' : 'bg-kyn-warning-primary'"
+                :title="sp.isAlive ? 'Còn sống' : 'Đã tạ thế'"
+              ></span>
+              <span
+                v-if="sp.title"
+                class="text-[8px] font-bold px-1.5 py-0.2 rounded uppercase tracking-wider flex-none"
+                :class="getSpouseBadgeClass(sp.title)"
+              >
+                {{ sp.title }}
+              </span>
+            </div>
+
+            <!-- Hàng 2: Tên người vợ in hoa đậm -->
+            <div class="font-bold text-[10.5px] sm:text-[11px] tracking-wide uppercase text-kyn-text-title truncate w-full leading-tight">
+              {{ sp.fullName }}
+            </div>
+
+            <!-- Hàng 3: Ngày mất / An táng trong ngoặc đơn in nghiêng -->
+            <div
+              v-if="formatSpouseMeta(sp)"
+              class="italic font-medium text-[8.5px] sm:text-[9px] text-kyn-text-subtitle truncate w-full mt-0.5 leading-tight"
+            >
+              ({{ formatSpouseMeta(sp) }})
+            </div>
           </div>
         </div>
       </div>
@@ -158,7 +219,7 @@
         :title="collapsed ? 'Mở nhánh con' : 'Thu gọn nhánh con'"
         @click.stop="handleToggleCollapse"
       >
-        <KynIcon :name="collapsed ? 'chevron-right' : 'chevron-down'" :size="11" />
+        <KynIcon :name="collapsed ? 'chevron-right' : 'chevron-down'" :size="10" />
         <span class="text-[9px] font-semibold ml-0.5 tabular-nums">{{ children.length }}</span>
       </button>
     </div>
@@ -171,7 +232,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue'
+import { computed, inject, ref, watch, onBeforeUnmount } from 'vue'
 import { KynIcon } from '@kyn/vue-components'
 import type { FamilyMember, SpouseInfo } from '../../types/family'
 import { FAMILY_CHART_CTX, type FamilyChartCtx } from './chartCtx'
@@ -192,14 +253,38 @@ const hasChildren = computed(() => children.value.length > 0)
 const genStyle = computed(() => getGenerationStyle(props.node.generation))
 
 const showMenu = ref(false)
+const menuRef = ref<HTMLElement | null>(null)
+
+function toggleMenu() {
+  showMenu.value = !showMenu.value
+}
+
+function handleDocClick(e: MouseEvent) {
+  if (menuRef.value && !menuRef.value.contains(e.target as Node)) {
+    showMenu.value = false
+  }
+}
+
+watch(showMenu, (isOpen) => {
+  if (isOpen) {
+    window.addEventListener('pointerdown', handleDocClick)
+  } else {
+    window.removeEventListener('pointerdown', handleDocClick)
+  }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('pointerdown', handleDocClick)
+})
 
 // Chiều rộng thẻ node tự động co giãn theo số lượng vợ chuẩn đồ họa CAD
 const boxWidth = computed(() => {
   const count = props.node.spouses?.length || 0
-  if (count <= 1) return 260
+  if (count === 0) return 195
+  if (count === 1) return 240
   if (count === 2) return 360
-  if (count === 3) return 480
-  return Math.max(480, count * 155)
+  if (count === 3) return 510
+  return Math.max(510, count * 170)
 })
 
 // Chuỗi thông tin của thành viên chính theo chuẩn CAD gia phả:
@@ -265,9 +350,12 @@ function formatSpouseMeta(sp: SpouseInfo): string {
     if (sp.burialPlace) {
       const place = sp.burialPlace.split(',')[0].trim()
       parts.push(place)
-    } else if (sp.origin) {
+    }
+    if (sp.origin) {
       const orig = sp.origin.split(',')[0].trim()
-      parts.push(orig)
+      if (!parts.includes(orig) && !sp.burialPlace?.includes(orig)) {
+        parts.push(orig)
+      }
     }
   } else {
     if (sp.birthYear) parts.push(`sn ${sp.birthYear}`)
@@ -278,6 +366,20 @@ function formatSpouseMeta(sp: SpouseInfo): string {
   }
 
   return parts.join(' ')
+}
+
+function getSpouseTooltip(sp: SpouseInfo): string {
+  const lines: string[] = []
+  const titleStr = sp.title ? `[${sp.title}] ` : 'Phối ngẫu: '
+  lines.push(`${titleStr}${sp.fullName}`)
+  lines.push(`Trạng thái: ${sp.isAlive ? 'Còn sống' : 'Đã tạ thế'}`)
+  if (sp.birthYear) lines.push(`Năm sinh: ${sp.birthYear}`)
+  if (sp.deathYear) lines.push(`Năm mất: ${sp.deathYear}`)
+  if (sp.deathDateLunar) lines.push(`Ngày giỗ (Âm lịch): ${sp.deathDateLunar}`)
+  if (sp.burialPlace) lines.push(`Nơi an táng: ${sp.burialPlace}`)
+  if (sp.origin) lines.push(`Quê quán: ${sp.origin}`)
+  if (sp.bio) lines.push(`Tiểu sử / Ghi chú: ${sp.bio}`)
+  return lines.join('\n')
 }
 
 function handleMenuAction(action: 'view' | 'addChild' | 'addSpouse' | 'edit' | 'delete') {
@@ -308,6 +410,9 @@ function getSpouseBadgeClass(title?: string) {
   }
   if (t.includes('bà tư') || t.includes('bà năm') || t.includes('thứ thất') || t.includes('vợ lẽ') || t.includes('á thất')) {
     return 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold'
+  }
+  if (t === 'vợ' || t.includes('hiền thê')) {
+    return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold'
   }
   return 'bg-kyn-bg-secondary-2 text-kyn-text-secondary border border-kyn-divider-dividers-2'
 }
@@ -416,12 +521,14 @@ function getSpouseBadgeClass(title?: string) {
   padding-top: 0;
 }
 
-/* Thẻ thành viên Gia Phả chuẩn CAD */
+/* Thẻ thành viên Gia Phả chuẩn CAD: Chiều cao hàng đồng nhất chuẩn 96px */
 .family-orgchart .oc-box {
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
-  min-height: 72px;
+  height: 96px;
+  min-height: 96px;
+  max-height: 96px;
   padding: 0;
   border-radius: 6px;
   border: 1.5px solid var(--kyn-org-border);
@@ -432,6 +539,24 @@ function getSpouseBadgeClass(title?: string) {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   z-index: 1;
+}
+
+.family-orgchart .oc-box--single,
+.family-orgchart .oc-box--with-spouse {
+  height: 96px;
+  min-height: 96px;
+  max-height: 96px;
+}
+
+/* Nâng toàn bộ nhánh và thẻ khi mở menu thao tác ⋯ để không bao giờ bị đè */
+.family-orgchart .oc-li.oc-li--menu-open,
+.family-orgchart .oc-li:has(> .oc-box--menu-open),
+.family-orgchart .oc-li:has(.oc-li--menu-open) {
+  z-index: 100;
+}
+
+.family-orgchart .oc-box.oc-box--menu-open {
+  z-index: 100 !important;
 }
 
 .family-orgchart .oc-box:hover {
@@ -450,6 +575,26 @@ function getSpouseBadgeClass(title?: string) {
   border-width: 2px;
   box-shadow: 0 0 0 3px rgba(249, 194, 22, 0.4), 0 8px 18px -2px rgba(0, 0, 0, 0.2) !important;
   transform: translateY(-2px);
+}
+
+@keyframes oc-pulse-focus {
+  0% {
+    box-shadow: 0 0 0 0 rgba(249, 194, 22, 0.9), 0 8px 24px rgba(249, 194, 22, 0.5);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(249, 194, 22, 0.45), 0 14px 32px rgba(249, 194, 22, 0.6);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(249, 194, 22, 0.4), 0 8px 18px -2px rgba(0, 0, 0, 0.2);
+    transform: scale(1);
+  }
+}
+
+.family-orgchart .oc-box.oc-box--pulse {
+  animation: oc-pulse-focus 0.9s ease-in-out 3;
+  z-index: 10 !important;
 }
 
 .family-orgchart .oc-box--deceased {
@@ -475,10 +620,10 @@ function getSpouseBadgeClass(title?: string) {
 .family-orgchart .oc-toggle {
   position: absolute;
   left: 50%;
-  bottom: -11px;
+  bottom: -10px;
   transform: translateX(-50%);
-  height: 20px;
-  padding: 0 7px;
+  height: 19px;
+  padding: 0 6px;
   border-radius: 999px;
   z-index: 2;
   display: flex;

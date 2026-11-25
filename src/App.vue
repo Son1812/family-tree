@@ -27,13 +27,14 @@
           </div>
 
           <!-- Ô tìm kiếm nhanh thành viên trên header -->
-          <div class="relative max-w-xs w-full hidden md:block">
+          <div ref="headerSearchBoxRef" class="relative max-w-xs w-full hidden md:block">
             <input
               v-model="quickSearch"
               type="text"
               placeholder="Tìm nhanh thành viên trong họ..."
               class="w-full pl-8 pr-3 py-1.5 text-xs rounded-kyn-2 border border-kyn-divider-dividers-2 focus:border-kyn-primary focus:ring-1 focus:ring-kyn-primary bg-kyn-bg-secondary-2 text-kyn-text-title placeholder:text-kyn-text-subtitle outline-none transition-all"
               @focus="isSearchOpen = true"
+              @keydown.esc="isSearchOpen = false"
             />
             <span class="absolute left-2.5 top-2 text-kyn-icon-tertiary">
               <KynIcon name="search" :size="14" />
@@ -207,7 +208,19 @@
             v-model="currentTab"
             :tabs="tabItems"
             variant="underline"
-          />
+          >
+            <template #tab="{ tab, active }">
+              <KynIcon v-if="tab.icon" :name="tab.icon" :size="16" />
+              <span class="truncate">{{ tab.label }}</span>
+              <span
+                v-if="tab.count != null"
+                class="shrink-0 px-2 py-0.5 rounded-full text-[11px] font-bold font-mono tabular-nums transition-all"
+                :class="getTabCountClass(tab.value, active)"
+              >
+                {{ tab.count }}
+              </span>
+            </template>
+          </AppTabs>
         </div>
       </div>
     </header>
@@ -217,6 +230,7 @@
       <!-- Tab 1: Phả Đồ Trực Quan (Kế thừa KynOrgChart) -->
       <div v-show="currentTab === 'chart'" class="flex-1 bg-kyn-bg-primary rounded-kyn-4 border border-kyn-divider-dividers-2 shadow-xs p-3 sm:p-5 flex flex-col transition-colors duration-200">
         <FamilyOrgChart
+          ref="chartComponentRef"
           @view-detail="openViewDetail"
           @add-child="openAddMember"
           @add-spouse="openAddSpouse"
@@ -226,7 +240,7 @@
       </div>
 
       <!-- Tab 2: Danh Sách Bảng -->
-      <div v-show="currentTab === 'table'">
+      <div v-show="currentTab === 'table'" class="flex-1 flex flex-col min-h-0">
         <TableView
           @view-detail="openViewDetail"
           @edit="openEditMember"
@@ -248,7 +262,7 @@
 
     <!-- Footer thanh lịch -->
     <footer class="bg-kyn-bg-primary border-t border-kyn-divider-dividers-2 py-4 text-center text-xs text-kyn-text-subtitle transition-colors duration-200">
-      Hệ thống Gia Phả Đại Tộc Nguyễn Phúc · Phát triển trên nền tảng Sơ đồ tổ chức KYN Components · 2026
+      Hệ thống Gia Phả Chi Phạm Tộc · Phát triển trên nền tảng Sơ đồ tổ chức KYN Components · 2026
     </footer>
 
     <!-- Modals -->
@@ -315,7 +329,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import {
   AppButton,
   AppBadge,
@@ -468,6 +482,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', handleGlobalKeydown)
+  window.removeEventListener('pointerdown', handleHeaderSearchDocClick)
 })
 
 // ── Tab items configuration ─────────────────────────────────────────
@@ -481,12 +496,14 @@ const tabItems = computed<AppTabItem[]>(() => [
     value: 'table',
     label: 'Danh Sách Phả Ký',
     count: stats.value.total,
+    countTone: 'primary',
     icon: 'clipboard-list',
   },
   {
     value: 'anniversary',
     label: 'Sổ Giỗ Chạp',
     count: deathAnniversaries.value.length,
+    countTone: 'warning',
     icon: 'calendar',
   },
   {
@@ -496,9 +513,43 @@ const tabItems = computed<AppTabItem[]>(() => [
   },
 ])
 
+function getTabCountClass(tabValue: string, active: boolean) {
+  if (tabValue === 'table') {
+    // Tab Danh Sách Phả Ký: Tông màu Vàng Hổ Phách (Amber)
+    return active
+      ? 'bg-amber-500 text-white shadow-xs'
+      : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+  }
+  if (tabValue === 'anniversary') {
+    // Tab Sổ Giỗ Chạp: Tông màu Hồng Trầm / Đỏ Nhang Đèn (Rose)
+    return active
+      ? 'bg-rose-600 text-white shadow-xs'
+      : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30'
+  }
+  return active
+    ? 'bg-kyn-primary text-white'
+    : 'bg-kyn-bg-secondary-2 text-kyn-text-secondary border border-kyn-divider-dividers-2'
+}
+
 // ── Tìm kiếm nhanh ──────────────────────────────────────────────────
+const chartComponentRef = ref<InstanceType<typeof FamilyOrgChart> | null>(null)
+const headerSearchBoxRef = ref<HTMLElement | null>(null)
 const quickSearch = ref('')
 const isSearchOpen = ref(false)
+
+function handleHeaderSearchDocClick(e: MouseEvent) {
+  if (headerSearchBoxRef.value && !headerSearchBoxRef.value.contains(e.target as Node)) {
+    isSearchOpen.value = false
+  }
+}
+
+watch(isSearchOpen, (open) => {
+  if (open) {
+    window.addEventListener('pointerdown', handleHeaderSearchDocClick)
+  } else {
+    window.removeEventListener('pointerdown', handleHeaderSearchDocClick)
+  }
+})
 
 const searchResults = computed(() => {
   if (!quickSearch.value.trim()) return []
@@ -508,7 +559,8 @@ const searchResults = computed(() => {
       (m) =>
         m.fullName.toLowerCase().includes(q) ||
         m.courtesyName?.toLowerCase().includes(q) ||
-        m.birthDate?.includes(q),
+        m.birthDate?.includes(q) ||
+        m.deathDateLunar?.includes(q),
     )
     .slice(0, 8)
 })
@@ -519,9 +571,13 @@ function handleSelectSearchResult(id: string) {
   quickSearch.value = ''
 }
 
-function locateOnTree(id: string) {
+async function locateOnTree(id: string) {
   currentTab.value = 'chart'
   focusMember(id)
+  await nextTick()
+  requestAnimationFrame(() => {
+    chartComponentRef.value?.centerMember(id)
+  })
 }
 
 // ── Modals State ────────────────────────────────────────────────────

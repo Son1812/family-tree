@@ -36,6 +36,59 @@
         </div>
       </div>
 
+      <!-- Ô tìm kiếm ngay trên toolbar phả đồ -->
+      <div ref="chartSearchBoxRef" class="relative max-w-xs w-52 sm:w-64">
+        <input
+          v-model="chartSearchQuery"
+          type="text"
+          placeholder="Tìm người trên phả đồ..."
+          class="w-full pl-8 pr-7 py-1 text-xs rounded-lg border border-kyn-divider-dividers-2 focus:border-kyn-primary focus:ring-1 focus:ring-kyn-primary bg-kyn-bg-secondary-2 text-kyn-text-title placeholder:text-kyn-text-subtitle outline-none transition-all"
+          @focus="isChartSearchOpen = true"
+          @keydown.esc="isChartSearchOpen = false"
+        />
+        <span class="absolute left-2.5 top-1.5 text-kyn-icon-tertiary pointer-events-none">
+          <KynIcon name="search" :size="13" />
+        </span>
+        <button
+          v-if="chartSearchQuery"
+          type="button"
+          class="absolute right-2 top-1 text-kyn-text-subtitle hover:text-kyn-text-title text-xs cursor-pointer"
+          @click="chartSearchQuery = ''"
+        >
+          ✕
+        </button>
+
+        <!-- Dropdown kết quả gợi ý -->
+        <div
+          v-if="isChartSearchOpen && chartSearchQuery && chartSearchResults.length > 0"
+          class="absolute left-0 right-0 top-8 bg-kyn-bg-primary rounded-lg shadow-xl border border-kyn-divider-dividers-2 py-1 z-[120] max-h-60 overflow-y-auto text-xs"
+          @mousedown.stop
+        >
+          <button
+            v-for="res in chartSearchResults"
+            :key="res.id"
+            type="button"
+            class="w-full text-left px-3 py-1.5 hover:bg-kyn-bg-secondary-2 flex items-center justify-between group transition-colors cursor-pointer"
+            @click="handleSelectChartSearch(res.id)"
+          >
+            <div class="min-w-0 pr-2">
+              <div class="font-bold text-kyn-text-title group-hover:text-amber-600 truncate">
+                {{ res.fullName }}
+                <span v-if="res.courtesyName" class="font-normal italic text-amber-600 ml-1">
+                  ({{ res.courtesyName }})
+                </span>
+              </div>
+              <div class="text-[10.5px] text-kyn-text-subtitle truncate">
+                Đời {{ res.generation }} {{ res.orderTitle ? '· ' + res.orderTitle : '' }} {{ res.branch ? '· ' + res.branch : '' }}
+              </div>
+            </div>
+            <span class="text-[10px] text-amber-600 font-semibold group-hover:underline flex-none">
+              Hiện giữa
+            </span>
+          </button>
+        </div>
+      </div>
+
       <!-- Zoom / Pan controls dùng AppButton KYN -->
       <div class="flex items-center gap-1.5 bg-kyn-bg-secondary-2 p-1 rounded-lg border border-kyn-divider-dividers-2">
         <AppButton variant="secondary" size="sm" title="Thu nhỏ" @click="zoomOut">−</AppButton>
@@ -124,7 +177,7 @@
               ? 'text-kyn-text-on-primary font-bold bg-kyn-primary px-2 py-0.5 rounded-md'
               : 'text-kyn-text-primary'
           "
-          @click="selectMember(id)"
+          @click="handleSelectBloodline(id)"
         >
           {{ memberName(id) }}
         </button>
@@ -159,11 +212,62 @@ const {
   bloodlinePathIds,
   collapsedIds,
   memberById,
+  flatMembers,
   selectMember,
+  focusMember,
   toggleCollapse,
   expandAll,
   collapseAll,
 } = useFamilyTree()
+
+// ── Tìm kiếm nhanh trực tiếp trên thanh công cụ Phả đồ ──────────────
+const chartSearchQuery = ref('')
+const isChartSearchOpen = ref(false)
+const chartSearchBoxRef = ref<HTMLElement | null>(null)
+
+const chartSearchResults = computed(() => {
+  const q = chartSearchQuery.value.trim().toLowerCase()
+  if (!q) return []
+  return flatMembers.value
+    .filter(
+      (m) =>
+        m.fullName.toLowerCase().includes(q) ||
+        m.courtesyName?.toLowerCase().includes(q) ||
+        m.birthDate?.includes(q) ||
+        m.deathDateLunar?.includes(q),
+    )
+    .slice(0, 8)
+})
+
+function handleSelectChartSearch(id: string) {
+  isChartSearchOpen.value = false
+  chartSearchQuery.value = ''
+  focusMember(id)
+  nextTick(() => {
+    centerMember(id)
+  })
+}
+
+function handleSelectBloodline(id: string) {
+  selectMember(id)
+  nextTick(() => {
+    centerMember(id)
+  })
+}
+
+function handleChartSearchDocClick(e: MouseEvent) {
+  if (chartSearchBoxRef.value && !chartSearchBoxRef.value.contains(e.target as Node)) {
+    isChartSearchOpen.value = false
+  }
+}
+
+watch(isChartSearchOpen, (open) => {
+  if (open) {
+    window.addEventListener('pointerdown', handleChartSearchDocClick)
+  } else {
+    window.removeEventListener('pointerdown', handleChartSearchDocClick)
+  }
+})
 
 const branchMode = ref<'expanded' | 'collapsed'>('expanded')
 
@@ -342,5 +446,70 @@ onMounted(() => {
 onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   window.removeEventListener('resize', scheduleHighlight)
+  window.removeEventListener('pointerdown', handleChartSearchDocClick)
+})
+
+/**
+ * Cuộn khung nhìn mượt mà để đưa thành viên chỉ định vào chính giữa màn hình (giữa phả đồ).
+ */
+async function centerMember(id: string, opts: { zoomIfSmall?: boolean; pulse?: boolean } = {}) {
+  const { zoomIfSmall = true, pulse = true } = opts
+  const vp = viewportRef.value
+  const chart = chartRef.value
+  if (!vp || !chart) return
+
+  // 1. Phóng to tỷ lệ đọc nếu đang ở mức quá nhỏ (< 75%)
+  if (zoomIfSmall && scale.value < 0.75) {
+    autoFit.value = false
+    scale.value = 0.85
+  }
+
+  // 2. Chờ Vue cập nhật và layout tính toán lại kích thước
+  await nextTick()
+  measureNatural()
+  await new Promise((resolve) => requestAnimationFrame(resolve))
+
+  // 3. Tìm phần tử thẻ thành viên
+  const el = chart.querySelector(`[data-node-id="${id}"]`) as HTMLElement | null
+  if (!el) {
+    console.warn(`[FamilyOrgChart] Không tìm thấy thẻ thành viên id="${id}"`)
+    return
+  }
+
+  // 4. Tính toán tọa độ tâm phần tử so với viewport
+  const elRect = el.getBoundingClientRect()
+  const vpRect = vp.getBoundingClientRect()
+
+  const elCenterX = elRect.left + elRect.width / 2
+  const elCenterY = elRect.top + elRect.height / 2
+
+  const vpCenterX = vpRect.left + vp.clientWidth / 2
+  const vpCenterY = vpRect.top + vp.clientHeight / 2
+
+  const deltaX = elCenterX - vpCenterX
+  const deltaY = elCenterY - vpCenterY
+
+  const targetLeft = Math.max(0, vp.scrollLeft + deltaX)
+  const targetTop = Math.max(0, vp.scrollTop + deltaY)
+
+  vp.scrollTo({
+    left: targetLeft,
+    top: targetTop,
+    behavior: 'smooth',
+  })
+
+  // 5. Hiệu ứng sóng vàng (Pulse glow) tập trung sự chú ý
+  if (pulse) {
+    el.classList.remove('oc-box--pulse')
+    void el.offsetWidth // Kích hoạt reflow
+    el.classList.add('oc-box--pulse')
+    setTimeout(() => {
+      el.classList.remove('oc-box--pulse')
+    }, 3600)
+  }
+}
+
+defineExpose({
+  centerMember,
 })
 </script>

@@ -6,7 +6,7 @@
         Văn Hiến Dòng Tộc
       </AppBadge>
       <h1 class="text-2xl sm:text-3xl font-bold text-kyn-text-title tracking-tight">
-        Phả Ký & Tộc Ước Đại Tộc Nguyễn Phúc
+        Phả Ký & Tộc Ước Chi Phạm Tộc
       </h1>
       <p class="text-xs text-kyn-text-subtitle max-w-xl mx-auto">
         "Cây có gốc mới nở cành xanh ngọn, nước có nguồn mới biển rộng sông sâu. Con người có tổ tiên mới nên thân nên hình."
@@ -14,7 +14,7 @@
     </div>
 
     <!-- Cội nguồn lịch sử -->
-    <div class="bg-kyn-bg-primary rounded-kyn-4 border border-kyn-divider-dividers-2 p-6 md:p-8 shadow-xs space-y-4 transition-colors duration-200">
+    <!-- <div class="bg-kyn-bg-primary rounded-kyn-4 border border-kyn-divider-dividers-2 p-6 md:p-8 shadow-xs space-y-4 transition-colors duration-200">
       <h2 class="text-xl font-bold text-amber-600 dark:text-amber-400 flex items-center gap-2 border-b border-kyn-divider-dividers-1 pb-3">
         <KynIcon name="building-2" :size="20" />
         <span>Nguồn Gốc & Sự Nghiệp Khởi Tổ</span>
@@ -30,7 +30,7 @@
           Từ thuở khai cơ đến nay, dòng họ đã phát triển qua 5 thế hệ, con cháu kế thừa gia phong, đỗ đạt cử nhân, thạc sĩ, tiến sĩ, nhiều người là kỹ sư, bác sĩ, sĩ quan quân đội, doanh nhân, góp phần xây dựng đất nước và rạng danh tiên tổ.
         </p>
       </div>
-    </div>
+    </div> -->
 
     <!-- Tộc ước 10 điều -->
     <div class="bg-amber-500/5 rounded-kyn-4 border border-amber-500/20 p-6 md:p-8 shadow-xs space-y-6 transition-colors duration-200">
@@ -83,7 +83,7 @@
     </div>
 
     <!-- Thông tin Từ đường và Quỹ Khuyến học -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div class="bg-kyn-bg-primary rounded-kyn-4 border border-kyn-divider-dividers-2 p-6 shadow-xs space-y-3 transition-colors duration-200">
         <h3 class="font-bold text-kyn-text-title text-base flex items-center gap-2">
           <KynIcon name="home" :size="18" class="text-amber-600" />
@@ -109,7 +109,7 @@
           Lễ phát thưởng khuyến học được tổ chức vào ngày Giỗ Tổ (Rằm tháng 8 Âm lịch) hàng năm tại Nhà thờ họ.
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 

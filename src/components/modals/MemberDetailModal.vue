@@ -319,6 +319,9 @@ function getSpouseBadgeClass(title?: string) {
   if (t.includes('bà tư') || t.includes('bà năm') || t.includes('thứ thất') || t.includes('vợ lẽ') || t.includes('á thất')) {
     return 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 font-bold'
   }
+  if (t === 'vợ' || t.includes('hiền thê')) {
+    return 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 font-bold'
+  }
   return 'bg-kyn-bg-secondary-2 text-kyn-text-secondary border border-kyn-divider-dividers-2 font-medium'
 }
 

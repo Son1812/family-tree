@@ -4,7 +4,7 @@
  */
 
 // Bảng số ngày Sóc (New Moon) và Tiết Khí cho chu kỳ Âm lịch
-function jdFromDate(dd: number, mm: number, yy: number): number {
+export function jdFromDate(dd: number, mm: number, yy: number): number {
   const a = Math.floor((14 - mm) / 12)
   const y = yy + 4800 - a
   const m = mm + 12 * a - 3
@@ -15,7 +15,7 @@ function jdFromDate(dd: number, mm: number, yy: number): number {
   return jd
 }
 
-function jdToDate(jd: number): [number, number, number] {
+export function jdToDate(jd: number): [number, number, number] {
   let a: number, b: number, c: number, d: number, e: number, m: number
   if (jd > 2299160) {
     const a1 = Math.floor((jd - 1867216.25) / 36524.25)
@@ -51,8 +51,7 @@ function getNewMoonDay(k: number, timeZone = 7): number {
   const C6 = -0.0004 * Math.sin((2 * F - M) * dr) - 0.0006 * Math.sin((2 * F + Mpr) * dr)
   const C7 = 0.001 * Math.sin((2 * F - Mpr) * dr) + 0.0005 * Math.sin((2 * Mpr + M) * dr)
   const dJ = C1 + C2 + C3 + C4 + C5 + C6 + C7
-  const JdNew = Jd1 + dJ
-  return Math.floor(JdNew + 0.5 + timeZone / 24)
+  return Math.floor(Jd1 + dJ + 0.5 + timeZone / 24)
 }
 
 function getSunLongitude(dayNumber: number, timeZone = 7): number {
@@ -68,6 +67,29 @@ function getSunLongitude(dayNumber: number, timeZone = 7): number {
   return Math.floor((L / Math.PI) * 6)
 }
 
+function getLunarMonth11(yy: number, timeZone = 7): number {
+  const k = Math.floor((jdFromDate(31, 12, yy) - 2415021.0769986) / 29.530588853)
+  let nm = getNewMoonDay(k, timeZone)
+  const sunLong = getSunLongitude(nm, timeZone)
+  if (sunLong >= 9) {
+    nm = getNewMoonDay(k - 1, timeZone)
+  }
+  return nm
+}
+
+function getLeapMonthOffset(a11: number, timeZone = 7): number {
+  const k = Math.floor((a11 - 2415021.0769986) / 29.530588853 + 0.5)
+  let last = 0
+  let i = 1
+  let arc = getSunLongitude(getNewMoonDay(k + i, timeZone), timeZone)
+  do {
+    last = arc
+    i++
+    arc = getSunLongitude(getNewMoonDay(k + i, timeZone), timeZone)
+  } while (arc !== last && i < 14)
+  return i - 1
+}
+
 export function convertSolar2Lunar(dd: number, mm: number, yy: number, timeZone = 7): [number, number, number, boolean] {
   const dayNumber = jdFromDate(dd, mm, yy)
   const k = Math.floor((dayNumber - 2415021.0769986) / 29.530588853)
@@ -75,48 +97,58 @@ export function convertSolar2Lunar(dd: number, mm: number, yy: number, timeZone 
   if (monthStart > dayNumber) {
     monthStart = getNewMoonDay(k, timeZone)
   }
-  let a11 = getNewMoonDay(Math.floor((jdFromDate(31, 12, yy) - 2415021.0769986) / 29.530588853), timeZone)
-  const b11 = a11
-  let sunLong = getSunLongitude(a11, timeZone)
-  if (sunLong >= 9) {
-    a11 = getNewMoonDay(Math.floor((jdFromDate(31, 12, yy) - 2415021.0769986) / 29.530588853) - 1, timeZone)
+  let a11 = getLunarMonth11(yy - 1, timeZone)
+  let b11 = getLunarMonth11(yy, timeZone)
+  let lunarYear = yy
+  if (dayNumber >= b11) {
+    lunarYear = yy
+    a11 = b11
+    b11 = getLunarMonth11(yy + 1, timeZone)
+  } else {
+    lunarYear = yy - 1
   }
   const lunarDay = dayNumber - monthStart + 1
   const diff = Math.floor((monthStart - a11) / 29)
   let lunarMonth = diff + 11
-  let lunarYear = yy
   let isLeap = false
-
   if (b11 - a11 > 365) {
-    const leapMonthDiff = 3 // simplified approximation
+    const leapMonthDiff = getLeapMonthOffset(a11, timeZone)
     if (diff >= leapMonthDiff) {
       lunarMonth = diff + 10
-      if (diff === leapMonthDiff) isLeap = true
+      if (diff === leapMonthDiff) {
+        isLeap = true
+      }
     }
   }
   if (lunarMonth > 12) {
     lunarMonth = lunarMonth - 12
   }
   if (lunarMonth >= 11 && diff < 4) {
-    lunarYear = yy - 1
+    lunarYear -= 1
+  }
+  if (lunarMonth < 11) {
+    lunarYear += 1
   }
   return [lunarDay, lunarMonth, lunarYear, isLeap]
 }
 
-/** Chuyển đổi từ ngày Âm lịch sang Dương lịch xấp xỉ */
-export function convertLunar2Solar(lunarDay: number, lunarMonth: number, lunarYear: number): [number, number, number] {
-  // Khoảng bù giữa âm lịch và dương lịch thường rơi vào +1 tháng (+29 đến +50 ngày)
-  // Tính chính xác bằng phép dò ngày
-  const testJd = jdFromDate(15, lunarMonth, lunarYear) + 30
-  for (let offset = -45; offset <= 65; offset++) {
-    const [d, m, y] = jdToDate(testJd + offset)
-    const [lD, lM, lY] = convertSolar2Lunar(d, m, y)
-    if (lD === lunarDay && lM === lunarMonth && lY === lunarYear) {
+/** Chuyển đổi từ ngày Âm lịch sang Dương lịch chính xác cho một năm Dương lịch */
+export function convertLunar2SolarForYear(
+  lunarDay: number,
+  lunarMonth: number,
+  solarYear: number,
+  timeZone = 7,
+): [number, number, number] | null {
+  const startJd = jdFromDate(1, 1, solarYear)
+  // Quét các ngày trong năm dương lịch (và 60 ngày sang đầu năm sau để bao quát hết tháng chạp)
+  for (let i = 0; i <= 390; i++) {
+    const [d, m, y] = jdToDate(startJd + i)
+    const [ld, lm] = convertSolar2Lunar(d, m, y, timeZone)
+    if (ld === lunarDay && lm === lunarMonth) {
       return [d, m, y]
     }
   }
-  // Fallback nếu năm chưa khớp chính xác
-  return [lunarDay, Math.min(12, lunarMonth + 1), lunarYear]
+  return null
 }
 
 const CAN = ['Giáp', 'Ất', 'Bính', 'Đinh', 'Mậu', 'Kỷ', 'Canh', 'Tân', 'Nhâm', 'Quý']
@@ -128,18 +160,162 @@ export function getCanChiYear(year: number): string {
   return `${CAN[canIndex]} ${CHI[chiIndex]}`
 }
 
+export function getCanChiDay(dd: number, mm: number, yy: number): string {
+  const jd = jdFromDate(dd, mm, yy)
+  return `${CAN[(jd + 9) % 10]} ${CHI[(jd + 1) % 12]}`
+}
+
+export function getCanChiMonth(lunarMonth: number, lunarYear: number): string {
+  const can = CAN[(lunarYear * 12 + lunarMonth + 3) % 10]
+  const chi = CHI[(lunarMonth + 1) % 12]
+  return `${can} ${chi}`
+}
+
 /**
  * Trả về chuỗi ngày Âm lịch hiện tại.
  */
-export function getTodayLunar(): { day: number; month: number; year: number; canChi: string; text: string } {
+export function getTodayLunar(): {
+  day: number
+  month: number
+  year: number
+  canChi: string
+  canChiDay: string
+  canChiMonth: string
+  text: string
+} {
   const now = new Date()
-  const [day, month, year] = convertSolar2Lunar(now.getDate(), now.getMonth() + 1, now.getFullYear())
+  const d = now.getDate()
+  const m = now.getMonth() + 1
+  const y = now.getFullYear()
+  const [day, month, year] = convertSolar2Lunar(d, m, y)
   const canChi = getCanChiYear(year)
+  const canChiDay = getCanChiDay(d, m, y)
+  const canChiMonth = getCanChiMonth(month, year)
   return {
     day,
     month,
     year,
     canChi,
-    text: `Ngày ${day} tháng ${month} năm ${canChi} (Âm lịch)`
+    canChiDay,
+    canChiMonth,
+    text: `Ngày ${day} tháng ${month} năm ${canChi} (${canChiDay})`,
   }
+}
+
+export interface CalendarDayCell {
+  solarDay: number
+  solarMonth: number
+  solarYear: number
+  lunarDay: number
+  lunarMonth: number
+  lunarYear: number
+  isLeapMonth: boolean
+  canChiDay: string
+  dayOfWeek: number // 0: CN, 1: T2, ..., 6: T7
+  isCurrentMonth: boolean
+  isToday: boolean
+  isFirstOrFullMoon: boolean
+  lunarLabel: string
+}
+
+/**
+ * Tạo dữ liệu lưới lịch vạn niên cho một tháng dương lịch (Thứ Hai -> Chủ Nhật).
+ */
+export function buildMonthCalendarGrid(year: number, month: number): CalendarDayCell[] {
+  const today = new Date()
+  const todayD = today.getDate()
+  const todayM = today.getMonth() + 1
+  const todayY = today.getFullYear()
+
+  // Ngày đầu tiên của tháng
+  const firstDay = new Date(year, month - 1, 1)
+  // JS getDay(): 0 = Chủ Nhật, 1 = Thứ Hai, ..., 6 = Thứ Bảy
+  // Đưa về tuần bắt đầu từ Thứ Hai (0 = Thứ 2, ..., 6 = Chủ Nhật)
+  let startOffset = (firstDay.getDay() + 6) % 7
+
+  // Tổng số ngày trong tháng này
+  const daysInMonth = new Date(year, month, 0).getDate()
+  // Tổng số ngày trong tháng trước
+  const daysInPrevMonth = new Date(year, month - 1, 0).getDate()
+
+  const cells: CalendarDayCell[] = []
+
+  // 1. Ngày đệm của tháng trước
+  for (let i = startOffset - 1; i >= 0; i--) {
+    const sD = daysInPrevMonth - i
+    const sM = month === 1 ? 12 : month - 1
+    const sY = month === 1 ? year - 1 : year
+    const [lD, lM, lY, isLeap] = convertSolar2Lunar(sD, sM, sY)
+    const canChiDay = getCanChiDay(sD, sM, sY)
+    const dow = new Date(sY, sM - 1, sD).getDay()
+
+    cells.push({
+      solarDay: sD,
+      solarMonth: sM,
+      solarYear: sY,
+      lunarDay: lD,
+      lunarMonth: lM,
+      lunarYear: lY,
+      isLeapMonth: isLeap,
+      canChiDay,
+      dayOfWeek: dow,
+      isCurrentMonth: false,
+      isToday: sD === todayD && sM === todayM && sY === todayY,
+      isFirstOrFullMoon: lD === 1 || lD === 15,
+      lunarLabel: lD === 1 ? `${lD}/${lM}` : `${lD}`,
+    })
+  }
+
+  // 2. Các ngày trong tháng chính
+  for (let sD = 1; sD <= daysInMonth; sD++) {
+    const [lD, lM, lY, isLeap] = convertSolar2Lunar(sD, month, year)
+    const canChiDay = getCanChiDay(sD, month, year)
+    const dow = new Date(year, month - 1, sD).getDay()
+
+    cells.push({
+      solarDay: sD,
+      solarMonth: month,
+      solarYear: year,
+      lunarDay: lD,
+      lunarMonth: lM,
+      lunarYear: lY,
+      isLeapMonth: isLeap,
+      canChiDay,
+      dayOfWeek: dow,
+      isCurrentMonth: true,
+      isToday: sD === todayD && month === todayM && year === todayY,
+      isFirstOrFullMoon: lD === 1 || lD === 15,
+      lunarLabel: lD === 1 ? `${lD}/${lM}` : `${lD}`,
+    })
+  }
+
+  // 3. Ngày đệm của tháng sau để tròn 35 hoặc 42 ô (bội số của 7)
+  const remaining = 7 - (cells.length % 7)
+  if (remaining < 7) {
+    for (let sD = 1; sD <= remaining; sD++) {
+      const sM = month === 12 ? 1 : month + 1
+      const sY = month === 12 ? year + 1 : year
+      const [lD, lM, lY, isLeap] = convertSolar2Lunar(sD, sM, sY)
+      const canChiDay = getCanChiDay(sD, sM, sY)
+      const dow = new Date(sY, sM - 1, sD).getDay()
+
+      cells.push({
+        solarDay: sD,
+        solarMonth: sM,
+        solarYear: sY,
+        lunarDay: lD,
+        lunarMonth: lM,
+        lunarYear: lY,
+        isLeapMonth: isLeap,
+        canChiDay,
+        dayOfWeek: dow,
+        isCurrentMonth: false,
+        isToday: sD === todayD && sM === todayM && sY === todayY,
+        isFirstOrFullMoon: lD === 1 || lD === 15,
+        lunarLabel: lD === 1 ? `${lD}/${lM}` : `${lD}`,
+      })
+    }
+  }
+
+  return cells
 }

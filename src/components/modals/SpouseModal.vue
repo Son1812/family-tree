@@ -10,6 +10,7 @@
   >
     <!-- Form Body -->
     <form id="spouseForm" class="space-y-4 text-xs" @submit.prevent="handleSubmit">
+      <!-- Họ và tên phối ngẫu -->
       <div>
         <label class="block font-semibold text-kyn-text-title mb-1">
           Họ và tên phối ngẫu <span class="text-kyn-error-primary">*</span>
@@ -23,12 +24,39 @@
         />
       </div>
 
-      <div>
-        <label class="block font-semibold text-kyn-text-title mb-1">
-          Danh vị / Danh xưng theo cổ lệ (Bà Cả, Bà Hai, Bà Ba...)
+      <!-- Checkbox "Có nhiều vợ" (chỉ hiển thị khi thành viên là Nam) -->
+      <div
+        v-if="targetMember?.gender !== 'female'"
+        class="flex items-center justify-between p-2.5 rounded-lg bg-kyn-bg-secondary-2 border border-kyn-divider-dividers-2"
+      >
+        <label for="hasMultipleWivesCheck" class="font-semibold text-kyn-text-title cursor-pointer flex items-center gap-2 select-none">
+          <input
+            id="hasMultipleWivesCheck"
+            v-model="hasMultipleWives"
+            type="checkbox"
+            class="w-4 h-4 text-kyn-primary rounded border-kyn-neutral-5 focus:ring-kyn-primary cursor-pointer"
+            @change="handleMultipleWivesToggle"
+          />
+          <span>Có nhiều vợ (Thê thiếp / Đa thê)</span>
         </label>
-        <!-- Gợi ý danh vị theo cổ lệ: Bà Cả, Bà Hai, Bà Ba... -->
-        <div class="flex flex-wrap gap-1.5 mb-2">
+        <span class="text-[11px] text-kyn-text-subtitle">
+          {{ hasMultipleWives ? 'Hiện danh sách: Bà Cả, Bà Hai...' : 'Chỉ có 1 vợ (mặc định)' }}
+        </span>
+      </div>
+
+      <!-- Danh vị / Danh xưng -->
+      <div>
+        <div class="flex items-center justify-between mb-1">
+          <label class="font-semibold text-kyn-text-title">
+            {{ hasMultipleWives ? 'Danh vị theo thứ tự (Bà Cả, Bà Hai, Bà Ba...)' : 'Danh vị / Vai vế' }}
+          </label>
+          <span v-if="!hasMultipleWives && targetMember?.gender !== 'female'" class="text-[10.5px] text-kyn-text-subtitle italic">
+            (Trường hợp 1 vợ dùng "Vợ")
+          </span>
+        </div>
+
+        <!-- Danh sách chọn nhanh Bà Cả, Bà Hai... (CHỈ HIỆN KHI CÓ NHIỀU VỢ hoặc là nữ) -->
+        <div v-if="hasMultipleWives || targetMember?.gender === 'female'" class="flex flex-wrap gap-1.5 mb-2">
           <button
             v-for="preset in titlePresets"
             :key="preset.value"
@@ -44,14 +72,16 @@
             {{ preset.label }}
           </button>
         </div>
+
         <input
           v-model="form.title"
           type="text"
-          placeholder="Bà Cả, Bà Hai, Bà Ba, Bà Tư, Vợ, Phu quân..."
+          :placeholder="hasMultipleWives ? 'Bà Cả, Bà Hai, Bà Ba, Bà Tư...' : (targetMember?.gender === 'female' ? 'Chồng, Phu quân...' : 'Vợ, Hiền thê...')"
           class="w-full px-3 py-2 rounded-lg border border-kyn-neutral-5 bg-kyn-bg-primary text-kyn-text-title focus:border-kyn-primary outline-none text-sm"
         />
       </div>
 
+      <!-- Nguyên quán -->
       <div>
         <label class="block font-semibold text-kyn-text-title mb-1">Nguyên quán / Quê quán</label>
         <input
@@ -68,9 +98,9 @@
           id="spouseAliveCheck"
           v-model="form.isAlive"
           type="checkbox"
-          class="w-4 h-4 text-kyn-primary rounded border-kyn-neutral-5 focus:ring-kyn-primary"
+          class="w-4 h-4 text-kyn-primary rounded border-kyn-neutral-5 focus:ring-kyn-primary cursor-pointer"
         />
-        <label for="spouseAliveCheck" class="font-semibold text-kyn-text-title cursor-pointer">
+        <label for="spouseAliveCheck" class="font-semibold text-kyn-text-title cursor-pointer select-none">
           Người phối ngẫu còn sống
         </label>
       </div>
@@ -145,7 +175,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, watch, computed } from 'vue'
+import { ref, reactive, watch, computed } from 'vue'
 import { AppModal, AppButton } from '@kyn/vue-components'
 import type { FamilyMember, SpouseInfo } from '../../types/family'
 
@@ -162,6 +192,27 @@ const emit = defineEmits<{
 
 const isEditing = computed(() => !!props.spouseToEdit)
 
+// Trạng thái checkbox có nhiều vợ hay không
+const hasMultipleWives = ref(false)
+
+function isMultipleWivesTitle(title?: string): boolean {
+  if (!title) return false
+  const t = title.toLowerCase()
+  return (
+    t.includes('bà cả') ||
+    t.includes('bà hai') ||
+    t.includes('bà ba') ||
+    t.includes('bà tư') ||
+    t.includes('bà năm') ||
+    t.includes('vợ lẽ') ||
+    t.includes('chính thất') ||
+    t.includes('kế thất') ||
+    t.includes('trắc thất') ||
+    t.includes('thứ thất') ||
+    t.includes('á thất')
+  )
+}
+
 const titlePresets = computed(() => {
   if (props.targetMember?.gender === 'female') {
     return [
@@ -176,14 +227,13 @@ const titlePresets = computed(() => {
     { label: 'Bà Ba', value: 'Bà Ba' },
     { label: 'Bà Tư', value: 'Bà Tư' },
     { label: 'Bà Năm', value: 'Bà Năm' },
-    { label: 'Vợ', value: 'Vợ' },
     { label: 'Vợ lẽ', value: 'Vợ lẽ' },
   ]
 })
 
 const form = reactive({
   fullName: '',
-  title: 'Bà Cả',
+  title: 'Vợ',
   origin: '',
   isAlive: false,
   birthYear: '',
@@ -199,8 +249,14 @@ watch(
     if (props.isOpen) {
       if (props.spouseToEdit) {
         // Nạp dữ liệu phối ngẫu cần sửa
+        const currentTitle = props.spouseToEdit.title || ''
+        const memberSpouseCount = props.targetMember?.spouses?.length || 0
+        
+        // Nhận diện xem người này có thuộc diện nhiều vợ hay không
+        hasMultipleWives.value = isMultipleWivesTitle(currentTitle) || memberSpouseCount > 1
+
         form.fullName = props.spouseToEdit.fullName || ''
-        form.title = props.spouseToEdit.title || 'Bà Cả'
+        form.title = currentTitle || (hasMultipleWives.value ? 'Bà Cả' : 'Vợ')
         form.origin = props.spouseToEdit.origin || ''
         form.isAlive = !!props.spouseToEdit.isAlive
         form.birthYear = props.spouseToEdit.birthYear != null ? String(props.spouseToEdit.birthYear) : ''
@@ -209,22 +265,28 @@ watch(
         form.burialPlace = props.spouseToEdit.burialPlace || ''
         form.bio = props.spouseToEdit.bio || ''
       } else {
-        // Thêm mới: tự động gợi ý danh xưng thông minh theo số lượng vợ hiện có
-        let defaultTitle = 'Bà Cả'
+        // Thêm mới phối ngẫu
+        const currentCount = props.targetMember?.spouses?.length || 0
         if (props.targetMember?.gender === 'female') {
-          defaultTitle = 'Chồng'
+          hasMultipleWives.value = false
+          form.title = 'Chồng'
         } else {
-          const currentCount = props.targetMember?.spouses?.length || 0
-          if (currentCount === 0) defaultTitle = 'Bà Cả'
-          else if (currentCount === 1) defaultTitle = 'Bà Hai'
-          else if (currentCount === 2) defaultTitle = 'Bà Ba'
-          else if (currentCount === 3) defaultTitle = 'Bà Tư'
-          else if (currentCount === 4) defaultTitle = 'Bà Năm'
-          else defaultTitle = `Bà thứ ${currentCount + 1}`
+          // Nếu người này đã có từ 1 vợ trở lên, việc thêm tiếp tục thuộc diện nhiều vợ
+          if (currentCount >= 1) {
+            hasMultipleWives.value = true
+            if (currentCount === 1) form.title = 'Bà Hai'
+            else if (currentCount === 2) form.title = 'Bà Ba'
+            else if (currentCount === 3) form.title = 'Bà Tư'
+            else if (currentCount === 4) form.title = 'Bà Năm'
+            else form.title = `Bà thứ ${currentCount + 1}`
+          } else {
+            // Mới có 1 vợ: Mặc định không tick "Có nhiều vợ", chỉ dùng "Vợ"
+            hasMultipleWives.value = false
+            form.title = 'Vợ'
+          }
         }
 
         form.fullName = ''
-        form.title = defaultTitle
         form.origin = ''
         form.isAlive = false
         form.birthYear = ''
@@ -237,6 +299,29 @@ watch(
   },
   { immediate: true },
 )
+
+function handleMultipleWivesToggle() {
+  if (hasMultipleWives.value) {
+    // Khi vừa tích chọn "Có nhiều vợ"
+    if (form.title === 'Vợ' || !form.title.trim()) {
+      const currentCount = props.targetMember?.spouses?.length || 0
+      if (currentCount === 0 || (props.spouseToEdit && props.targetMember?.spouses?.[0]?.id === props.spouseToEdit.id)) {
+        form.title = 'Bà Cả'
+      } else if (currentCount === 1) {
+        form.title = 'Bà Hai'
+      } else if (currentCount === 2) {
+        form.title = 'Bà Ba'
+      } else {
+        form.title = 'Bà Cả'
+      }
+    }
+  } else {
+    // Khi bỏ chọn "Có nhiều vợ", quay về danh vị "Vợ" chuẩn trường hợp 1 vợ
+    if (isMultipleWivesTitle(form.title) || !form.title.trim()) {
+      form.title = 'Vợ'
+    }
+  }
+}
 
 function handleSubmit() {
   if (!form.fullName.trim() || !props.targetMember) return
